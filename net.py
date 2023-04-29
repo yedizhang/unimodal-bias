@@ -83,10 +83,8 @@ class late_fusion(nn.Module):
             int hid_dim: Hidden dimension for one modality
         """
         super().__init__()
-        self.inA_hid = nn.Linear(2, hid_dim, bias=bias)
-        self.inB_hid = nn.Linear(1, hid_dim, bias=bias)
-        # self.inA_hid = nn.Linear(in_dim//2, hid_dim, bias=bias)
-        # self.inB_hid = nn.Linear(in_dim//2, hid_dim, bias=bias)
+        self.inA_hid = nn.Linear(in_dim[0], hid_dim, bias=bias)
+        self.inB_hid = nn.Linear(in_dim[1], hid_dim, bias=bias)
         self.activation = activation
         self.hid_out = nn.Linear(hid_dim*2, out_dim, bias=bias)
 
@@ -127,8 +125,8 @@ class deep_fusion(nn.Module):
 
         self.layers = nn.ModuleDict()
         for i in range(1, fuse_depth):  # iterate 1, ..., fuse_depth-1
-            self.layers['encodeA_'+str(i)] = torch.nn.Linear(in_dim//2, hid_dim, bias=True)
-            self.layers['encodeB_'+str(i)] = torch.nn.Linear(in_dim//2, hid_dim, bias=True)
+            self.layers['encodeA_'+str(i)] = torch.nn.Linear(in_dim[0], hid_dim, bias=True)
+            self.layers['encodeB_'+str(i)] = torch.nn.Linear(in_dim[1], hid_dim, bias=True)
         self.layers['fuse'] = torch.nn.Linear(hid_dim*2, hid_dim, bias=True)
         for i in range(fuse_depth, depth):  # iterate fuse_depth, ..., depth-1
             self.layers['decode_'+str(i)] = torch.nn.Linear(hid_dim, hid_dim, bias=True)

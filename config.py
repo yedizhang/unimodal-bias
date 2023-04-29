@@ -23,4 +23,6 @@ def config():
     # param for deep_fusion mode
     parser.add_argument("--depth", type=int, default=6, help='number of layers ')
     parser.add_argument("--fuse_depth", type=int, default=2, help='fuse at which layer')
+
+    print(parser.parse_args(), '\n')
     return parser

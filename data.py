@@ -5,6 +5,17 @@ plt.rc('font', family="Times New Roman")
 plt.rcParams['font.size'] = '16'
 
 
+def gen_data(args):
+    if args.data == 'toy':
+        x1, x2, y = gen_toy_data(noise=False, size=args.dataset_size)
+        # vis_toy_data(x1, x2, y)
+    elif args.data == 'xor':
+        x1, x2, y = gen_xor_data(size=args.dataset_size)
+    else:
+        x1, x2, y = gen_data(args.data)
+    return x1, x2, y
+
+
 def gen_toy_data(noise=False, size=5000):
     mean = [0, 0]
     cov = [[1, 0],
@@ -20,7 +31,18 @@ def gen_toy_data(noise=False, size=5000):
     return x1, x2, y
 
 
-def gen_data(relation='redundancy', size=5000):
+def vis_toy_data(x1, x2, y, plot_2D=False):
+    if plot_2D == True:
+        plt.plot(x1, x2, '.', alpha=0.5)
+        plt.axis('equal')
+    else:
+        fig = plt.figure()
+        ax = fig.add_subplot(projection='3d')
+        ax.scatter(x1, x2, y, marker='o')
+    plt.show()
+
+
+def gen_multi_data(relation='redundancy', size=5000):
     mean = [0, 0, 0, 0]
     cov = [[1, 0, 0, 0],
            [0, 4, 0, 0],
@@ -51,17 +73,6 @@ def gen_data(relation='redundancy', size=5000):
     #     y = pts[:, 1] + pts[:, 2]
 
     return x1, x2, y
-
-
-def vis_toy_data(x1, x2, y, plot_2D=False):
-    if plot_2D == True:
-        plt.plot(x1, x2, '.', alpha=0.5)
-        plt.axis('equal')
-    else:
-        fig = plt.figure()
-        ax = fig.add_subplot(projection='3d')
-        ax.scatter(x1, x2, y, marker='o')
-    plt.show()
 
 
 def gen_xor_data(size=4096):
