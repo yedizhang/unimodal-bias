@@ -1,4 +1,3 @@
-import argparse
 import numpy as np
 import matplotlib
 import matplotlib.pyplot as plt
@@ -9,33 +8,15 @@ import wandb
 
 from net import shallow_net, early_fusion, late_fusion, deep_fusion
 from data import *
+from config import config
 plt.rc('font', family="Times New Roman")
 plt.rcParams['font.size'] = '16'
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 
-def config():
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--epoch", type=int, default=1000, help='number of epochs')
-    parser.add_argument("--lr", type=float, default=0.02, help='learning rate')
-    parser.add_argument("--init", type=float, default=1e-12, help='weight initialization')
-    parser.add_argument("--data", type=str, default='synergy', help='data type')
-    parser.add_argument("--mode", type=str, default='shallow', help='model type')
-    parser.add_argument("--hid_width", type=int, default=1, help='number of hidden neurons')
-    parser.add_argument("--plot_weight", action="store_true", help="enable weights plot")
-    parser.add_argument("--wandb", action="store_true", help="enable wandb logging")
-    # param for deep_fusion mode
-    parser.add_argument("--depth", type=int, default=6, help='number of layers ')
-    parser.add_argument("--fuse_depth", type=int, default=2, help='fuse at which layer')
-    return parser
-
-
 def plot_training(args, losses, weights=None):
-    from cycler import cycler
-    plt.rc('axes', prop_cycle=(cycler('color', list(matplotlib.colors.BASE_COLORS))))
-    # plt.figure(figsize=(10, 5))
-    plt.plot(losses / losses[0], alpha=0.7, label=args.fuse_depth-1)
-    # plt.plot(losses / losses[0], c='k', alpha=0.7)
+    plt.figure(figsize=(10, 5))
+    plt.plot(losses / losses[0], c='k', alpha=0.7, label="loss")
     plt.xlabel("Epoch")
     plt.title(args.mode)
     if weights is not None:
@@ -55,8 +36,8 @@ def plot_training(args, losses, weights=None):
         # plt.plot(w1, 'g--')
         # plt.plot(w2, 'm--')
     plt.legend()
+    plt.show()
     
-
 
 def train(x1, x2, y, args):
     x = np.concatenate((x1, x2), -1)
@@ -65,8 +46,6 @@ def train(x1, x2, y, args):
     x_tensor = torch.tensor(x).float().to(device)
     y_tensor = torch.tensor(y[:,np.newaxis]).float().to(device)
 
-    lr = args.lr  # Learning rate
-    n_epochs = args.epoch  # Number of epochs
     dim_input = x_tensor.size(-1)
     dim_output = y_tensor.size(-1)
 
@@ -76,30 +55,38 @@ def train(x1, x2, y, args):
             project="toy-multimodal",
             # Track hyperparameters and run metadata
             config={
-                "learning_rate": lr,
-                "epochs": n_epochs,
+                "learning_rate": args.lr,
+                "regularization": args.reg,
+                "epochs": args.epoch,
             })
 
     # Model instantiation
     if args.mode == "shallow":
         network = shallow_net(dim_input, dim_output, args.init)
     elif args.mode == "early_fusion":
-        network = early_fusion(dim_input, args.hid_width, dim_output, args.init)
+        network = early_fusion(dim_input, args.hid_width, dim_output, args.activation, args.bias, args.init)
     elif args.mode == "late_fusion":
-        network = late_fusion(dim_input, args.hid_width, dim_output, args.init)
+        network = late_fusion(dim_input, args.hid_width, dim_output, args.activation, args.bias, args.init)
     elif args.mode == "deep_fusion":
         gamma = np.power(args.init, 1/(args.depth-1))
         print("gamma =", gamma)
         network = deep_fusion(dim_input, args.hid_width, dim_output, args.depth, args.fuse_depth, gamma)
     print(network)
     network = network.to(device)
-    optimizer = optim.SGD(network.parameters(), lr=lr)
+    optimizer = optim.SGD(network.parameters(), lr=args.lr, weight_decay=args.reg)
+
+    # optimizer = optim.SGD([
+    #                         {'params': network.hid_out.parameters()},
+    #                         {'params': network.inB_hid.parameters()},
+    #                         {'params': network.inA_hid.parameters(), 'lr': args.lr*16}
+    #                       ], lr=args.lr)
+
     criterion = nn.MSELoss()
 
-    losses = np.zeros(n_epochs)  # loss records
-    weights = np.zeros((n_epochs, dim_input)) if args.plot_weight else None
+    losses = np.zeros(args.epoch)  # loss records
+    weights = np.zeros((args.epoch, dim_input)) if args.plot_weight else None
     # Training loop
-    for i in range(n_epochs):  
+    for i in range(args.epoch):  
         optimizer.zero_grad()
         if args.mode == "late_fusion" or args.mode == "deep_fusion":
             predictions= network(x1_tensor, x2_tensor)
@@ -112,7 +99,7 @@ def train(x1, x2, y, args):
         losses[i] = loss.item()
         
         if args.plot_weight:
-            model_weights = [param.data.detach().numpy() for param in network.parameters()]
+            model_weights = [param.data.cpu().detach().numpy() for param in network.parameters()]
             if args.mode == "shallow":
                 weights[i, :] = model_weights[0]
             elif args.mode == "early_fusion":
@@ -128,19 +115,15 @@ def train(x1, x2, y, args):
 
 
 if __name__ == "__main__":
-    parser = config()
-    args = parser.parse_args()
+    args = config().parse_args()
     print(args, '\n')
 
-    x1, x2, y = gen_toy_data()
-    # vis_toy_data(x1, x2, y)
+    if args.data == 'toy':
+        x1, x2, y = gen_toy_data(noise=False, size=args.dataset_size)
+        # vis_toy_data(x1, x2, y)
+    elif args.data == 'xor':
+        x1, x2, y = gen_xor_data()
+    else:
+        x1, x2, y = gen_data(args.data)
 
-    # x1, x2, y = gen_data(args.data)
-    
-    plt.figure(figsize=(20, 5))
-    for i in range(1, 7):
-        args.fuse_depth = i
-        train(x1, x2, y, args)
-    plt.ylabel("Loss")
-    plt.title("Loss records when fusing at different depth (total depth = {:d})".format(args.depth))
-    plt.show()
+    train(x1, x2, y, args)

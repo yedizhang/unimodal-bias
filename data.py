@@ -62,3 +62,24 @@ def vis_toy_data(x1, x2, y, plot_2D=False):
         ax = fig.add_subplot(projection='3d')
         ax.scatter(x1, x2, y, marker='o')
     plt.show()
+
+
+def gen_xor_data(size=4096):
+    x1 = np.array([[1, 1],
+                   [1, -1],
+                   [-1, 1],
+                   [-1, -1]])
+    x1_xor = np.array([0, 1, 1, 0])[:, np.newaxis]
+    x1 = np.repeat(x1, size//4, axis=0)
+    x1_xor = np.repeat(x1_xor, size//4, axis=0)
+
+    # mean = [0, 0]
+    # cov = [[1, 0],
+    #        [0, 4]]
+    # x2 = np.random.multivariate_normal(mean, cov, 4)
+    # y = x1_xor + x2[:, 0] + x2[:, 1]
+
+    x2 = np.random.normal(0, 1, size)[:, np.newaxis]
+    y = x1_xor + x2
+    
+    return x1, x2, np.squeeze(y)
