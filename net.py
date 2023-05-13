@@ -122,14 +122,19 @@ class deep_fusion(nn.Module):
         super(deep_fusion, self).__init__()
         self.depth = depth
         self.fuse_depth = fuse_depth
-
         self.layers = nn.ModuleDict()
+
         for i in range(1, fuse_depth):  # iterate 1, ..., fuse_depth-1
-            self.layers['encodeA_'+str(i)] = torch.nn.Linear(in_dim[0], hid_dim, bias=True)
-            self.layers['encodeB_'+str(i)] = torch.nn.Linear(in_dim[1], hid_dim, bias=True)
-        self.layers['fuse'] = torch.nn.Linear(hid_dim*2, hid_dim, bias=True)
+            self.layers['encodeA_'+str(i)] = torch.nn.Linear(in_dim[0], hid_dim, bias=False)
+            self.layers['encodeB_'+str(i)] = torch.nn.Linear(in_dim[1], hid_dim, bias=False)
+        
+        if fuse_depth == 1:  # early fusion
+            self.layers['fuse'] = torch.nn.Linear(sum(in_dim), hid_dim, bias=False)
+        else:
+            self.layers['fuse'] = torch.nn.Linear(hid_dim*2, hid_dim, bias=False)
+        
         for i in range(fuse_depth, depth):  # iterate fuse_depth, ..., depth-1
-            self.layers['decode_'+str(i)] = torch.nn.Linear(hid_dim, hid_dim, bias=True)
+            self.layers['decode_'+str(i)] = torch.nn.Linear(hid_dim, hid_dim, bias=False)
         # self.layers['hid_out'] = nn.Linear(hid_dim*2, out_dim, bias=False)
 
         self._init_weights(gamma)
@@ -147,4 +152,7 @@ class deep_fusion(nn.Module):
     def _init_weights(self, gamma):
         for m in self.modules():
             if isinstance(m, nn.Linear):
-                nn.init.normal_(m.weight, mean=0, std=gamma)
+                # nn.init.normal_(m.weight, mean=0, std=gamma)
+                # nn.init.orthogonal_(m.weight, gain=gamma)
+                nn.init.constant_(m.weight, val=gamma)
+                print("We are now using constant init")
