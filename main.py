@@ -46,7 +46,7 @@ def train(x1, x2, y, args):
     elif args.mode == "late_fusion":
         network = late_fusion(in_dim, args.hid_width, out_dim, args.activation, args.bias, args.init)
     elif args.mode == "deep_fusion":
-        # gamma = np.power(args.init, 1/(args.depth-1))
+        # gamma = np.power(args.init, 1/(1+args.fuse_depth))
         # print("gamma =", gamma)   # init should scale with init1/init2 = exp(depth2/depth1)
         network = deep_fusion(in_dim, args.hid_width, out_dim, args.depth, args.fuse_depth, args.init)
     print(network)
@@ -66,7 +66,9 @@ def train(x1, x2, y, args):
         ims = []
         fig = plt.figure(figsize=(10, 5))
         ax1=fig.add_subplot(1,2,1)
+        ax1.grid()
         ax2=fig.add_subplot(1,2,2)
+        ax2.set_ylim([-0.05, 1.05])
     # Training loop
     for i in range(args.epoch):
         optimizer.zero_grad()
@@ -78,6 +80,14 @@ def train(x1, x2, y, args):
         loss.backward()
         optimizer.step()
         losses[i] = loss.item()
+
+        # if i == args.epoch-1:
+        #     model_weights = [param.data.cpu().detach().numpy() for param in network.parameters()]
+        #     if args.mode == "early_fusion":
+        #             W = model_weights[0]
+        #     elif args.mode == "late_fusion":
+        #         W = np.concatenate((model_weights[0], model_weights[1]), -1)
+        #     vis_relu_3d(W)
         
         if args.plot_weight:
             model_weights = [param.data.cpu().detach().numpy() for param in network.parameters()]
@@ -101,9 +111,13 @@ def train(x1, x2, y, args):
     
     if args.plot_weight and args.data == 'xor':
         ani = animation.ArtistAnimation(fig, ims, interval=50, blit=False)
+        fig.suptitle(args.mode+' ReLU net, 01XOR & Gaussian')  # +-1 XOR & Gaussian var=1 data
+        fig.colorbar(ims[0][0], orientation='vertical')
         plt.tight_layout()
+        # ani.save('early_relu_01xor_100hid.mp4', dpi=300)
         plt.show()
-    plot_training(args, losses, weights)
+    else:
+        plot_training(args, losses, weights)
 
 
 if __name__ == "__main__":

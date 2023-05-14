@@ -17,26 +17,34 @@ def vis_toy_data(x1, x2, y, plot_2D=False):
     plt.show()
 
 
-def vis_relu(W, losses, ax1, ax2, plot_3D=False):
-    if plot_3D:
-        fig = plt.figure()
-        ax = fig.add_subplot(projection='3d')
-        ax.scatter(W[:, 0], W[:, 1], W[:, 2], c='k')
-        ax.set_xlabel('xor 1')
-        ax.set_ylabel('xor 2')
-        ax.set_box_aspect([1,1,1])
-        plt.show()
-    else:
-        im1 = ax1.scatter(W[:, 0], W[:, 1], c='k', s=6, animated=True)
-        im2, = ax2.plot(losses, c='k', animated=True)
-        return [im1, im2]
+def vis_relu_3d(W):
+    fig = plt.figure()
+    ax = fig.add_subplot(projection='3d')
+    ax.scatter(W[:, 0], W[:, 1], W[:, 2], 
+               c=W[:, 2], cmap='coolwarm', edgecolors='k', linewidths=0.5)
+    ax.set_xlabel('xor 1')
+    ax.set_ylabel('xor 2')
+    ax.set_title('Late fusion ReLU net, +-1XOR & Gaussian')
+    ax.set_box_aspect([1,1,1])
+    plt.tight_layout()
+    plt.show()
+
+
+def vis_relu(W, losses, ax1, ax2):
+    losses = losses / losses[0] if len(losses) != 0 else losses
+    im1 = ax1.scatter(W[:, 0], W[:, 1], c=W[:, 2], 
+                      cmap='coolwarm', edgecolors='k', linewidths=0.25, s=10, animated=True)
+    im2, = ax2.plot(losses, c='k', animated=True)
+    return [im1, im2]
 
 
 def plot_training(args, losses, weights=None):
-    # plt.rc('axes', prop_cycle=(cycler('color', list(matplotlib.colors.BASE_COLORS))))
-    # plt.plot(losses / losses[0], alpha=0.7, label=args.fuse_depth-1)  # label=args.fuse_depth-1, str(args.hid_width)+" hidden neurons"
-    plt.figure(figsize=(10, 5))
-    plt.plot(losses / losses[0], c='k', alpha=0.7, label="loss")
+    if args.mode == "deep_fusion":
+        plt.rc('axes', prop_cycle=(cycler('color', list(matplotlib.colors.BASE_COLORS))))
+        plt.plot(losses / losses[0], alpha=0.7, label=args.fuse_depth-1)  # label=args.fuse_depth-1, str(args.hid_width)+" hidden neurons"
+    else:
+        plt.figure(figsize=(10, 5))
+        plt.plot(losses / losses[0], c='k', alpha=0.7, label="loss")
     plt.xlabel("Epoch")
     # plt.ylim((-0.05, 1.05))
     plt.title(args.mode)  # args.mode+" linear network with 8 hidden neurons"
