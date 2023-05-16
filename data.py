@@ -69,7 +69,7 @@ def gen_xor_data(size=4096):
                    [1, -1],
                    [-1, 1],
                    [-1, -1]])
-    x1_xor = np.array([0, 1, 1, 0])[:, np.newaxis]
+    x1_xor = np.array([-1, 1, 1, -1])[:, np.newaxis]
     x1 = np.repeat(x1, size//4, axis=0)
     x1_xor = np.repeat(x1_xor, size//4, axis=0)
 
