@@ -111,10 +111,10 @@ def train(x1, x2, y, args):
     
     if args.plot_weight and args.data == 'xor':
         ani = animation.ArtistAnimation(fig, ims, interval=50, blit=False)
-        fig.suptitle(args.mode+' ReLU net, 01XOR & Gaussian')  # +-1 XOR & Gaussian var=1 data
+        fig.suptitle(args.mode+' ReLU net, +-1XOR & Gaussian')  # +-1 XOR & Gaussian var=1 data
         fig.colorbar(ims[0][0], orientation='vertical')
         plt.tight_layout()
-        # ani.save('early_relu_01xor_100hid.mp4', dpi=300)
+        ani.save('early_relu_+-1xor_100hid.mp4', dpi=300)
         plt.show()
     else:
         plot_training(args, losses, weights)
