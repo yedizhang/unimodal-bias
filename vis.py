@@ -1,3 +1,4 @@
+import numpy as np
 import matplotlib
 import matplotlib.pyplot as plt
 import matplotlib.animation as animation
@@ -17,6 +18,25 @@ def vis_toy_data(x1, x2, y, plot_2D=False):
     plt.show()
 
 
+def xor_sweep(args):
+    assert args.data == 'xor', "Cannot do xor_sweep for {} datasets".format(args.data)
+    from data import gen_data
+    from main import train
+    vars = np.hstack((np.linspace(0.01, 2, 30),
+                      np.linspace(2.1, 5, 10)))
+    dirs = []
+    for var in vars:
+        args.var_lin = var
+        x1, x2, y = gen_data(args)
+        dir = train(x1, x2, y, args)
+        dirs.append(dir)
+        print(var)
+    plt.scatter(vars, np.array(dirs), c='k')
+    plt.xlabel("Variance of linear modality")
+    plt.ylabel("Number of directions")
+    plt.show()
+
+
 def vis_relu_3d(W):
     fig = plt.figure()
     ax = fig.add_subplot(projection='3d')
@@ -26,6 +46,7 @@ def vis_relu_3d(W):
     ax.set_ylabel('xor 2')
     ax.set_title('Late fusion ReLU net, +-1XOR & Gaussian')
     ax.set_box_aspect([1,1,1])
+    ax.set_aspect('equal')
     plt.tight_layout()
     plt.show()
 
