@@ -15,6 +15,7 @@ def config():
     parser.add_argument("--data", type=str, default='toy', help='data type')
     parser.add_argument("--dataset_size", type=int, default=4096, help='number of training samples')
     parser.add_argument("--mode", type=str, default='shallow', help='model type')
+    parser.add_argument("--var_lin", type=float, default=1, help='variance of the linear modality in XOR dataset')
 
     # param for logging settings
     parser.add_argument("--plot_weight", action="store_true", help="enable weights plot")

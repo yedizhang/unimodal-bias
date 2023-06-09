@@ -10,7 +10,7 @@ def gen_data(args):
         x1, x2, y = gen_toy_data(noise=False, size=args.dataset_size)
         # vis_toy_data(x1, x2, y)
     elif args.data == 'xor':
-        x1, x2, y = gen_xor_data(size=args.dataset_size)
+        x1, x2, y = gen_xor_data(var_lin=args.var_lin, size=args.dataset_size)
     else:
         x1, x2, y = gen_data(args.data)
     return x1, x2, y
@@ -64,7 +64,7 @@ def gen_multi_data(relation='redundancy', size=4096):
     return x1, x2, y
 
 
-def gen_xor_data(size=4096):
+def gen_xor_data(var_lin=1, size=4096):
     x1 = np.array([[1, 1],
                    [1, -1],
                    [-1, 1],
@@ -79,7 +79,7 @@ def gen_xor_data(size=4096):
     # x2 = np.random.multivariate_normal(mean, cov, 4)
     # y = x1_xor + x2[:, 0] + x2[:, 1]
 
-    x2 = np.random.normal(0, 1, size)[:, np.newaxis]
+    x2 = np.random.normal(0, np.sqrt(var_lin), size)[:, np.newaxis]  # np.sqrt(np.sqrt(2)/2)
     y = x1_xor + x2
     
     return x1, x2, np.squeeze(y)
