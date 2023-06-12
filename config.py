@@ -19,7 +19,6 @@ def config():
 
     # param for logging settings
     parser.add_argument("--plot_weight", action="store_true", help="enable weights plot")
-    parser.add_argument("--wandb", action="store_true", help="enable wandb logging")
     
     # param for deep_fusion mode
     parser.add_argument("--depth", type=int, default=6, help='number of layers ')

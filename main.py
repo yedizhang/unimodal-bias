@@ -2,7 +2,6 @@ import numpy as np
 import torch
 import torch.nn as nn
 import torch.optim as optim
-import wandb
 import matplotlib.pyplot as plt
 plt.rc('font', family="Times New Roman")
 plt.rcParams['font.size'] = '16'
@@ -26,18 +25,6 @@ def train(data, args):
         x = np.concatenate((data['x1'], data['x2']), -1)
         x_tensor = torch.tensor(x).float().to(device)
         in_dim = x_tensor.size(-1)
-    
-
-    if args.wandb:
-        wandb.login()
-        run = wandb.init(
-            project="toy-multimodal",
-            # Track hyperparameters and run metadata
-            config={
-                "learning_rate": args.lr,
-                "regularization": args.reg,
-                "epochs": args.epoch,
-            })
 
     # Model instantiation
     if args.mode == "shallow":
@@ -106,9 +93,6 @@ def train(data, args):
                 elif args.mode == "late_fusion":
                     W = np.concatenate((model_weights[0], model_weights[1]), -1)
                 ims.append(vis_relu(W, losses[:i], ax1, ax2))
-
-            if args.wandb:
-                wandb.log({"loss": loss.item(), "weight1": weights[i, 0], "weight2": weights[i, 1]})
     
     if args.plot_weight and args.data == 'xor':
         ani = animation.ArtistAnimation(fig, ims, interval=50, blit=False)
