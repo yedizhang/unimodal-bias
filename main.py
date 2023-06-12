@@ -10,19 +10,20 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 from net import shallow_net, early_fusion, late_fusion, deep_fusion
 from config import config
+from util import *
 from data import *
 from vis import *
 
 
-def train(x1, x2, y, args):
-    y_tensor = torch.tensor(y[:,np.newaxis]).float().to(device)
+def train(data, args):
+    y_tensor = torch.tensor(data['y'][:,np.newaxis]).float().to(device)
     out_dim = y_tensor.size(-1)
     if args.mode == "late_fusion" or args.mode == "deep_fusion":
-        x1_tensor = torch.tensor(x1).float().to(device)
-        x2_tensor = torch.tensor(x2).float().to(device)
+        x1_tensor = torch.tensor(data['x1']).float().to(device)
+        x2_tensor = torch.tensor(data['x2']).float().to(device)
         in_dim = [x1_tensor.size(-1), x2_tensor.size(-1)]
     else:
-        x = np.concatenate((x1, x2), -1)
+        x = np.concatenate((data['x1'], data['x2']), -1)
         x_tensor = torch.tensor(x).float().to(device)
         in_dim = x_tensor.size(-1)
     
@@ -81,10 +82,10 @@ def train(x1, x2, y, args):
         optimizer.step()
         losses[i] = loss.item()
 
-        # if i == args.epoch-1:
+        # if args.data == 'xor' and i == args.epoch-1:
         #     model_weights = [param.data.cpu().detach().numpy() for param in network.parameters()]
         #     if args.mode == "early_fusion":
-        #             W = model_weights[0]
+        #         W = model_weights[0]
         #     elif args.mode == "late_fusion":
         #         W = np.concatenate((model_weights[0], model_weights[1]), -1)
         #     vis_relu_3d(W)
@@ -111,8 +112,8 @@ def train(x1, x2, y, args):
     
     if args.plot_weight and args.data == 'xor':
         ani = animation.ArtistAnimation(fig, ims, interval=50, blit=False)
-        fig.suptitle(args.mode+' ReLU net, +-1XOR & Gaussian')  # +-1 XOR & Gaussian var=1 data
-        fig.colorbar(ims[0][0], orientation='vertical')
+        fig.suptitle(args.mode+' ReLU net, $\pm$1XOR & Gaussian var='+str(args.var_lin))
+        fig.colorbar(ims[-1][0], orientation='vertical')
         plt.tight_layout()
         ani.save('early_relu_+-1xor_100hid.mp4', dpi=300)
         plt.show()
@@ -123,16 +124,16 @@ def train(x1, x2, y, args):
 if __name__ == "__main__":
     args = config().parse_args()
     
-    x1, x2, y = gen_data(args)
+    data = gen_data(args)
     
     if args.mode == "deep_fusion":
         plt.figure(figsize=(10, 5))
         for i in range(1, args.depth+1):
             args.fuse_depth = i
-            train(x1, x2, y, args)
+            train(data, args)
         plt.title("Loss records when fusing at different depth (total depth = {:d})".format(args.depth))
         plt.ylabel("Loss")
     else:
-        train(x1, x2, y, args)
+        train(data, args)
 
     plt.show()

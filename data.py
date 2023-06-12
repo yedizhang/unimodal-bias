@@ -7,13 +7,12 @@ plt.rcParams['font.size'] = '16'
 
 def gen_data(args):
     if args.data == 'toy':
-        x1, x2, y = gen_toy_data(noise=False, size=args.dataset_size)
+        return gen_toy_data(noise=False, size=args.dataset_size)
         # vis_toy_data(x1, x2, y)
     elif args.data == 'xor':
-        x1, x2, y = gen_xor_data(var_lin=args.var_lin, size=args.dataset_size)
+        return gen_xor_data(var_lin=args.var_lin, size=args.dataset_size)
     else:
-        x1, x2, y = gen_data(args.data)
-    return x1, x2, y
+        return gen_data(args.data)
 
 
 def gen_toy_data(noise=False, size=4096):
@@ -28,7 +27,9 @@ def gen_toy_data(noise=False, size=4096):
         n = np.random.normal(loc=0.0, scale=0.1, size=size)
         y = y + n
     print(pts.mean(axis=0), '\n', np.cov(pts.T), '\n', np.corrcoef(pts.T)[0, 1])
-    return x1, x2, y
+    return {"x1": x1,
+            "x2": x2,
+            "y": y}
 
 
 def gen_multi_data(relation='redundancy', size=4096):
@@ -61,8 +62,9 @@ def gen_multi_data(relation='redundancy', size=4096):
     # elif relation == 'synergy':
     #     y = pts[:, 1] + pts[:, 2]
 
-    return x1, x2, y
-
+    return {"x1": x1,
+            "x2": x2,
+            "y": y}
 
 def gen_xor_data(var_lin=1, size=4096):
     x1 = np.array([[1, 1],
@@ -81,5 +83,7 @@ def gen_xor_data(var_lin=1, size=4096):
 
     x2 = np.random.normal(0, np.sqrt(var_lin), size)[:, np.newaxis]  # np.sqrt(np.sqrt(2)/2)
     y = x1_xor + x2
-    
-    return x1, x2, np.squeeze(y)
+
+    return {"x1": x1,
+            "x2": x2,
+            "y": np.squeeze(y)}
