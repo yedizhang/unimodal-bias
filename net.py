@@ -118,10 +118,11 @@ class deep_fusion(nn.Module):
     """
     A Linear Neural Net with multiple hidden layers
     """
-    def __init__(self, in_dim, hid_dim, out_dim, depth, fuse_depth, gamma):
+    def __init__(self, in_dim, hid_dim, out_dim, depth, fuse_depth, activation, gamma):
         super(deep_fusion, self).__init__()
         self.depth = depth
         self.fuse_depth = fuse_depth
+        self.activation = activation
         self.layers = nn.ModuleDict()
 
         for i in range(1, fuse_depth):  # iterate 1, ..., fuse_depth-1
@@ -151,9 +152,13 @@ class deep_fusion(nn.Module):
         for i in range(1, self.fuse_depth):
             x1 = self.layers['encodeA_'+str(i)](x1)
             x2 = self.layers['encodeB_'+str(i)](x2)
+            if self.activation == 'relu':
+                x1, x2 = F.relu(x1), F.relu(x2)
         x = torch.cat((x1, x2), -1)
         x = self.layers['fuse'](x)
         for i in range(self.fuse_depth, self.depth):
+            if self.activation == 'relu':
+                x = F.relu(x)
             x = self.layers['decode_'+str(i)](x)
         return x
 
