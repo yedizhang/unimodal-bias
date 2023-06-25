@@ -13,17 +13,16 @@ def h_bluemean(m, sig):
 
 def yh_mean(polar, azimuth, x, y, mode='early'):
     d = sph2cart(polar, azimuth, 1)
+    y = np.repeat(y[:, np.newaxis], len(polar), axis=1)
     if mode == 'early':
         h = np.maximum(x @ d, 0)
-        y = np.repeat(y[:, np.newaxis], len(polar), axis=1)
-        return np.mean(h*y, axis=0)
     elif mode == 'late':
-        d[:2] = 0.5 * d[:2] / np.linalg.norm(d[:2])
-        d[2] = 0.5
-        h1 = x1 @ d[:2]
-        h2 = np.squeeze(x2) * d[2]
+        d[:2] = 0.5 * d[:2] / np.linalg.norm(d[:2], axis=0)
+        d[[2]] = 0.5
+        h1 = x[:, :2] @ d[:2]
+        h2 = x[:, [2]] * d[[2]]
         h = np.maximum(h1, 0) + np.maximum(h2, 0)
-        return np.mean(y*h)
+    return np.mean(h*y, axis=0)
 
 
 def cal_contour(data, mode='early', grid=100):
