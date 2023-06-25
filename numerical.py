@@ -11,11 +11,12 @@ def h_bluemean(m, sig):
            + np.exp(- m**2 / (2*sig**2)) *2*sig / np.sqrt(2*np.pi)
 
 
-def yh_mean(polar, azimuth, x1, x2, y, mode='early'):
+def yh_mean(polar, azimuth, x, y, mode='early'):
     d = sph2cart(polar, azimuth, 1)
     if mode == 'early':
-        h = x1 @ d[:2] + np.squeeze(x2) * d[2]
-        return np.mean(y*np.maximum(h, 0)) 
+        h = np.maximum(x @ d, 0)
+        y = np.repeat(y[:, np.newaxis], len(polar), axis=1)
+        return np.mean(h*y, axis=0)
     elif mode == 'late':
         d[:2] = 0.5 * d[:2] / np.linalg.norm(d[:2])
         d[2] = 0.5
@@ -25,21 +26,19 @@ def yh_mean(polar, azimuth, x1, x2, y, mode='early'):
         return np.mean(y*h)
 
 
-def xor_contour(var_lin, surf=True, mode='early', grid=100):
-    x1, x2, y = gen_xor_data(var_lin)
+def cal_contour(data, mode='early', grid=100):
+    x1, x2, y = data.values()
+    x = np.concatenate((x1, x2), axis=1)
     angles = np.linspace(-180, 180, grid)
-    X, cov = [], []
-    for a in angles:
-        for p in angles:
-            r = yh_mean(p, a, x1, x2, y, mode)
-            xyz = sph2cart(p, a, np.abs(r))
-            cov.append(r)
-            X.append(xyz)
-    X = np.array(X)
-    cov = np.array(cov)
+    polars, azimuths = np.meshgrid(angles, angles)
+    polars, azimuths = polars.flatten(), azimuths.flatten()
+    r = yh_mean(polars, azimuths, x, y, mode)
+    xyz = sph2cart(polars, azimuths, np.abs(r)).T
+    return xyz, r
 
-    fig = plt.figure()
-    ax = fig.add_subplot(projection='3d')
+
+def xor_contour(data, ax, mode='early', grid=100, surf=True, imshow=False):
+    X, cov = cal_contour(data, mode, grid)
     if surf:
         X = X.reshape((grid, grid, 3))
         cov = cov.reshape((grid, grid, 1))
@@ -49,9 +48,11 @@ def xor_contour(var_lin, surf=True, mode='early', grid=100):
         pts = ax.scatter(X[:, 0], X[:, 1], X[:, 2], c=np.array(cov), cmap='coolwarm')
         fig.colorbar(pts, orientation='vertical')
     ax.set_aspect('equal')
-    ax.set_title(mode + ' fusion, $\pm$1 XOR & Gaussian var=' + str(var_lin))
-    ax.view_init(elev=90, azim=0, roll=0)
-    plt.show()
+    ax.view_init(elev=20, azim=10, roll=0)
+    if imshow:
+        ax.set_title(mode + ' fusion, $\pm$1 XOR & Gaussian')
+        ax.view_init(elev=90, azim=0, roll=0)
+        plt.show()
 
 
 if __name__ == "__main__":
@@ -73,5 +74,8 @@ if __name__ == "__main__":
     plt.title("Sectional view at azimuth=135")
     plt.legend()
     plt.show()
-    
-    xor_contour(0.5, surf=True, mode='early')
+
+    data = gen_xor_data(1)
+    fig = plt.figure()
+    ax = fig.add_subplot(projection='3d')
+    xor_contour(data, ax, mode='early', surf=True, imshow=True)
