@@ -11,18 +11,25 @@ def gen_data(args):
         # vis_toy_data(x1, x2, y)
     elif args.data == 'xor':
         return gen_xor_data(var_lin=args.var_lin, size=args.dataset_size)
+    elif args.data == 'fission':
+        return gen_fission_data(args.dataset_size)
     else:
-        return gen_data(args.data)
+        raise NotImplementedError
 
 
 def gen_toy_data(noise=False, size=4096):
+    """
+    x1: shape (size, 1)
+    x2: shape (size, 1)
+    y: shape (size,)
+    """
     mean = [0, 0]
     cov = [[1, 0],
            [0, 4]]
     pts = np.random.multivariate_normal(mean, cov, size)
     x1 = pts[:, [0]]
     x2 = pts[:, [1]]
-    y = pts[:, 0] + pts[:, 1]
+    y = x1 + x2
     if noise:
         n = np.random.normal(loc=0.0, scale=0.1, size=size)
         y = y + n
@@ -66,6 +73,7 @@ def gen_multi_data(relation='redundancy', size=4096):
             "x2": x2,
             "y": y}
 
+
 def gen_xor_data(var_lin=1, size=4096):
     x1 = np.array([[1, 1],
                    [1, -1],
@@ -86,4 +94,11 @@ def gen_xor_data(var_lin=1, size=4096):
 
     return {"x1": x1,
             "x2": x2,
-            "y": np.squeeze(y)}
+            "y": y}
+
+
+def gen_fission_data(size=4096):
+    x = np.random.normal(0, 1, size)[:, np.newaxis]
+    return {"x": x,
+            "y1": x,
+            "y2": 2*x}
