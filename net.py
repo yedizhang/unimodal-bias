@@ -93,10 +93,10 @@ class late_fusion(nn.Module):
     def forward(self, x1, x2):
         """
         Args:
-            torch.Tensor x: Input tensor
+            torch.Tensor x1: shape (dataset_size, in_dim[0])
+            torch.Tensor x1: shape (dataset_size, in_dim[1])
         Returns:
-            torch.Tensor hid: Hidden layer activity
-            torch.Tensor out: Output/Prediction
+            torch.Tensor out: shape (dataset_size, out_dim)
         """
         hidA = self.inA_hid(x1)
         hidB = self.inB_hid(x2)
@@ -169,3 +169,29 @@ class deep_fusion(nn.Module):
                 # nn.init.orthogonal_(m.weight, gain=gamma)
                 # nn.init.constant_(m.weight, val=gamma)
                 # print("We are now using constant init")
+
+
+class fission(nn.Module):
+    """
+    A Linear Neural Net with one hidden layer
+    """
+    def __init__(self, in_dim, hid_dim, out_dim, bias, gamma=1e-12):
+        super().__init__()
+        self.in_hid = nn.Linear(in_dim, hid_dim*2, bias=bias)
+        self.hid_outA = nn.Linear(hid_dim, out_dim[0], bias=bias)
+        self.hid_outB = nn.Linear(hid_dim, out_dim[1], bias=bias)
+        self._init_weights(gamma)
+
+    def forward(self, x):
+        hid = self.in_hid(x)
+        outA = self.hid_outA(hid[:, [0]])
+        outB = self.hid_outB(hid[:, [1]])
+        out = torch.cat((outA, outB), -1)
+        return out
+    
+    def _init_weights(self, gamma):
+        for m in self.modules():
+            if isinstance(m, nn.Linear):
+                nn.init.normal_(m.weight, mean=0, std=gamma)
+                if m.bias is not None:
+                    nn.init.normal_(m.bias, mean=0, std=gamma)
