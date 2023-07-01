@@ -2,8 +2,8 @@ import numpy as np
 
 
 def sph2cart(polar, azimuth, r):
-    polar = polar*np.pi/180
-    azimuth = azimuth*np.pi/180
+    polar = polar * np.pi / 180
+    azimuth = azimuth * np.pi / 180
     x = r * np.sin(polar) * np.cos(azimuth)
     y = r * np.sin(polar) * np.sin(azimuth)
     z = r * np.cos(polar)
@@ -11,12 +11,12 @@ def sph2cart(polar, azimuth, r):
 
 
 def cart2sph(xyz):
-    ptsnew = np.hstack((xyz, np.zeros(xyz.shape)))
     xy = xyz[:,0]**2 + xyz[:,1]**2
-    ptsnew[:,3] = np.sqrt(xy + xyz[:,2]**2)  # radius
-    ptsnew[:,4] = np.arctan2(np.sqrt(xy), xyz[:,2]) * 180 / np.pi  # polar, elevation angle defined from Z-axis down
-    ptsnew[:,5] = np.arctan2(xyz[:,1], xyz[:,0]) * 180 / np.pi  # azimuth
-    return ptsnew[:, 3:]
+    sph = np.zeros(xyz.shape)
+    sph[0] = np.sqrt(xy + xyz[:,2]**2)  # radius
+    sph[1] = np.arctan2(np.sqrt(xy), xyz[:,2]) * 180 / np.pi  # polar, elevation angle defined from Z-axis down
+    sph[2] = np.arctan2(xyz[:,1], xyz[:,0]) * 180 / np.pi  # azimuth
+    return sph
 
 
 def count_angle(sph):
