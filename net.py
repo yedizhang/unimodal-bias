@@ -177,6 +177,7 @@ class fission(nn.Module):
     """
     def __init__(self, in_dim, hid_dim, out_dim, bias, gamma=1e-12):
         super().__init__()
+        self.hid = hid_dim
         self.in_hid = nn.Linear(in_dim, hid_dim*2, bias=bias)
         self.hid_outA = nn.Linear(hid_dim, out_dim[0], bias=bias)
         self.hid_outB = nn.Linear(hid_dim, out_dim[1], bias=bias)
@@ -184,8 +185,8 @@ class fission(nn.Module):
 
     def forward(self, x):
         hid = self.in_hid(x)
-        outA = self.hid_outA(hid[:, [0]])
-        outB = self.hid_outB(hid[:, [1]])
+        outA = self.hid_outA(hid[:, :self.hid])
+        outB = self.hid_outB(hid[:, self.hid:])
         out = torch.cat((outA, outB), -1)
         return out
     
