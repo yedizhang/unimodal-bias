@@ -16,13 +16,15 @@ def config():
     parser.add_argument("--dataset_size", type=int, default=4096, help='number of training samples')
     parser.add_argument("--mode", type=str, default='shallow', help='model type')
     parser.add_argument("--var_lin", type=float, default=1, help='variance of the linear modality in XOR dataset')
-
-    # param for logging settings
-    parser.add_argument("--plot_weight", action="store_true", help="enable weights plot")
     
     # param for deep_fusion mode
     parser.add_argument("--depth", type=int, default=6, help='number of layers ')
     parser.add_argument("--fuse_depth", type=int, default=2, help='fuse at which layer')
+
+    # param for logging settings
+    parser.add_argument("--plot_weight", action="store_true", help="enable weights plot")
+    parser.add_argument("--vis_feat", action="store_true", help="enable feature visualization")
+    parser.add_argument("--vis_contour", action="store_true", help="enable contour visualization")
 
     print(parser.parse_args(), '\n')
     return parser
