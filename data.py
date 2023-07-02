@@ -5,6 +5,33 @@ plt.rc('font', family="Times New Roman")
 plt.rcParams['font.size'] = '16'
 
 
+def prep_data(args, data, device):
+    import torch
+    if args.mode == "late_fusion" or args.mode == "deep_fusion":
+        x1_tensor = torch.tensor(data['x1']).float().to(device)
+        x2_tensor = torch.tensor(data['x2']).float().to(device)
+        y_tensor = torch.tensor(data['y']).float().to(device)
+        in_dim = [x1_tensor.size(-1), x2_tensor.size(-1)]
+        out_dim = y_tensor.size(-1)
+        return x1_tensor, x2_tensor, y_tensor, in_dim, out_dim
+    elif args.data == 'fission':
+        x_tensor = torch.tensor(data['x']).float().to(device)
+        y = np.concatenate((data['y1'], data['y2']), -1)
+        y_tensor = torch.tensor(y).float().to(device)
+        in_dim = x_tensor.size(-1)
+        if args.mode == 'fission':
+            out_dim = [data['y1'].shape[-1], data['y2'].shape[-1]]
+        else:
+            out_dim = y_tensor.size(-1)
+    else:
+        x = np.concatenate((data['x1'], data['x2']), -1)
+        x_tensor = torch.tensor(x).float().to(device)
+        y_tensor = torch.tensor(data['y']).float().to(device)
+        in_dim = x_tensor.size(-1)
+        out_dim = y_tensor.size(-1)
+    return x_tensor, y_tensor, in_dim, out_dim
+
+
 def gen_data(args):
     if args.data == 'toy':
         return gen_toy_data(noise=False, size=args.dataset_size)
@@ -98,7 +125,7 @@ def gen_xor_data(var_lin=1, size=4096):
 
 
 def gen_fission_data(size=4096):
-    x = np.random.normal(0, 1, size)[:, np.newaxis]
+    x = np.random.normal(0, 2, size)[:, np.newaxis]
     return {"x": x,
-            "y1": x,
-            "y2": 2*x}
+            "y1": 0.5*x,
+            "y2": x}

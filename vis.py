@@ -3,6 +3,7 @@ import matplotlib
 import matplotlib.pyplot as plt
 import matplotlib.animation as animation
 from cycler import cycler
+from numerical import *
 plt.rc('font', family="Times New Roman")
 plt.rcParams['font.size'] = '16'
 
@@ -51,12 +52,39 @@ def vis_relu_3d(W):
     plt.show()
 
 
-def vis_relu(W, losses, ax1, ax2):
+def prep_axs(args):
+    ax_num = 2+args.vis_contour
+    if args.vis_feat:
+        ims = []
+        fig = plt.figure(figsize=(5*ax_num, 5))
+        fig.suptitle('{} {} net, XOR & Gaussian var={:.2f}'.format(args.mode, args.activation, args.var_lin))
+        ax1 = fig.add_subplot(1, ax_num, 1)
+        ax1.set_ylim([-0.05, 1.05])
+        ax1.set_xlim([0, args.epoch])
+        ax2 = fig.add_subplot(1, ax_num, 2)
+        ax2.grid()
+        ax2.axis('equal')
+        return fig, [ax1, ax2], []
+    if args.vis_contour:
+        ax3 = fig.add_subplot(1,ax_num,3, projection='3d')
+        plt.tight_layout()
+        return fig, [ax1, ax2, ax3], []
+
+
+def vis_relu(args, data, W, losses, axs):
     losses = losses / losses[0] if len(losses) != 0 else losses
-    im1 = ax1.scatter(W[:, 0], W[:, 1], c=W[:, 2], 
-                      cmap='coolwarm', edgecolors='k', linewidths=0.25, s=10, animated=True)
-    im2, = ax2.plot(losses, c='k', animated=True)
-    return [im1, im2]
+    im1, = axs[0].plot(losses, c='k', animated=True)
+    if W.shape[-1] == 3:
+        im2 = axs[1].scatter(W[:, 0], W[:, 1], c=W[:, 2], 
+                        #   vmin=-1, vmax=1,
+                        cmap='coolwarm', edgecolors='k', linewidths=0.25, s=10, animated=True)
+    else:
+        im2 = axs[1].scatter(W[:, 0], W[:, 1], c='k', linewidths=0.25, s=10, animated=True)
+    if len(axs) == 3:
+        im3 = xor_contour(data, axs[2], args.mode)
+        return [im1, im2, im3]
+    else:
+        return [im1, im2]
 
 
 def plot_training(args, losses, weights=None):
