@@ -3,8 +3,8 @@ import torch
 import torch.nn as nn
 import torch.optim as optim
 import matplotlib.pyplot as plt
-plt.rc('font', family="Times New Roman")
-plt.rcParams['font.size'] = '16'
+plt.rc('font', family="Arial")
+plt.rcParams['font.size'] = '14'
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 from net import shallow_net, early_fusion, late_fusion, deep_fusion, fission

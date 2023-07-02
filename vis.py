@@ -4,8 +4,8 @@ import matplotlib.pyplot as plt
 import matplotlib.animation as animation
 from cycler import cycler
 from numerical import *
-plt.rc('font', family="Times New Roman")
-plt.rcParams['font.size'] = '16'
+plt.rc('font', family="Arial")
+plt.rcParams['font.size'] = '14'
 
 
 def vis_toy_data(x1, x2, y, plot_2D=False):
