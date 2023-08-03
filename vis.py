@@ -98,8 +98,8 @@ def plot_training(args, losses, weights=None):
     # plt.ylim((-0.05, 1.05))
     plt.title(args.mode)  # args.mode+" linear network with 8 hidden neurons"
     if weights is not None:
-        plt.plot(weights[:, 0], color='g', alpha=0.7, label="weight1")
-        plt.plot(weights[:, 1], color='m', alpha=0.7, label="weight2")
+        plt.plot(weights[:, 0], color='g', alpha=0.7, label="$W_{1A}$")
+        plt.plot(weights[:, 1], color='m', alpha=0.7, label="$W_{1B}$")
         # if args.mode == "shallow":
         #     t = np.arange(args.epoch)
         #     tau = 0.5 / args.lr
