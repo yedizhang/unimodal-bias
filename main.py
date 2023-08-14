@@ -33,9 +33,11 @@ def creat_network(args, in_dim, out_dim):
     return network.to(device)
 
 
-def unpack_weights(parameters, hid, w_dim, in_dim):
+def unpack_weights(parameters, args, w_dim, in_dim):
+    hid = args.hid_width
+    Lf = args.fuse_depth - 1
+    W_tot = np.ones(w_dim)
     W = [param.data.cpu().detach().numpy() for param in parameters]
-    W_tot = np.zeros(w_dim)
     if args.mode == "shallow":
         W_tot = W[0].squeeze()
         in_hid = W[0]
@@ -46,6 +48,20 @@ def unpack_weights(parameters, hid, w_dim, in_dim):
         W_tot[:in_dim[0]] = W[-1][:, :hid] @ W[0]
         W_tot[in_dim[0]:] = W[-1][:, hid:] @ W[1]
         in_hid = np.concatenate((W[0], W[1]), -1)
+    elif args.mode == "deep_fusion":
+        if args.fuse_depth == 1:  # deep early fusion
+            in_hid = W[0]
+            for i in range(len(W)):
+                W_tot = W[i] @ W_tot
+        else:  # deep late fusion
+            in_hid = np.concatenate((W[0], W[1]), -1)
+            h1, h2 = np.eye(in_dim[0]), np.eye(in_dim[1])
+            for i in range(0, Lf):
+                h1, h2 = W[2*i] @ h1, W[2*i+1] @ h2
+            h = np.concatenate((W[2*Lf][:, :hid] @ h1, W[2*Lf][:, hid:] @ h2), -1)
+            for i in range(2*Lf+1, len(W)):
+                h = W[i] @ h
+            W_tot = h
     elif args.mode == "fission":
         W_tot[0] = W[1] @ W[0][:hid, :] 
         W_tot[1] = W[2] @ W[0][hid:, :] 
@@ -64,7 +80,8 @@ def train(data, args):
     losses = np.zeros(args.epoch)  # loss records
     w_dim = in_dim if isinstance(in_dim, int) else sum(in_dim)
     weights = np.zeros((args.epoch, w_dim)) if args.plot_weight else None
-    fig, axs, ims = prep_axs(args)
+    if args.vis_feat:
+        fig, axs, ims = prep_axs(args)
     # Training loop
     for i in range(args.epoch):
         optimizer.zero_grad()
@@ -78,7 +95,7 @@ def train(data, args):
         losses[i] = loss.item()
         
         if args.plot_weight:
-            weights[i, :], feat = unpack_weights(network.parameters(), args.hid_width, w_dim, in_dim)
+            weights[i, :], feat = unpack_weights(network.parameters(), args, w_dim, in_dim)
             if args.vis_feat and i % 10 == 0:
                 data_res = data.copy()
                 data_res['y'] = data['y'] - predictions.cpu().detach().numpy()
@@ -114,7 +131,7 @@ if __name__ == "__main__":
         for i in range(1, args.depth+1):
             args.fuse_depth = i
             train(data, args)
-        plt.title("Loss records when fusing at different depth (total depth = {:d})".format(args.depth))
+        plt.title("Loss records with different fusion points (total depth $L$= {:d})".format(args.depth))
         plt.ylabel("Loss")
     else:
         train(data, args)
