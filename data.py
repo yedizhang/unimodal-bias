@@ -34,8 +34,10 @@ def prep_data(args, data, device):
 
 def gen_data(args):
     if args.data == 'toy':
-        return gen_toy_data(noise=False, size=args.dataset_size)
         # vis_toy_data(x1, x2, y)
+        return gen_toy_data(noise=False, size=args.dataset_size)
+    if args.data == 'multi':
+        return gen_multi_data(args.dataset_size)
     elif args.data == 'xor':
         return gen_xor_data(var_lin=args.var_lin, size=args.dataset_size)
     elif args.data == 'fission':
@@ -48,7 +50,7 @@ def gen_toy_data(noise=False, size=4096):
     """
     x1: shape (size, 1)
     x2: shape (size, 1)
-    y: shape (size,)
+    y: shape (size, 1)
     """
     mean = [0, 0]
     cov = [[1, 0],
@@ -66,39 +68,21 @@ def gen_toy_data(noise=False, size=4096):
             "y": y}
 
 
-def gen_multi_data(relation='redundancy', size=4096):
+def gen_multi_data(size=4096):
     mean = [0, 0, 0, 0]
     cov = [[1, 0, 0, 0],
-           [0, 4, 0, 0],
+           [0, 1, 0, 0],
            [0, 0, 4, 0],
-           [0, 0, 0, 1]]
+           [0, 0, 0, 4]]
     pts = np.random.multivariate_normal(mean, cov, size)
-    x1 = pts[:, 0:3]
-    x2 = np.concatenate((pts[:, 0:2], pts[:, [3]]), 1)
-    if relation == 'redundancy':
-        y = pts[:, 0] + pts[:, 1]
-    elif relation == 'uniqueness':
-        y = pts[:, 2]
-    elif relation == 'synergy':
-        y = pts[:, 2] + pts[:, 3]
-
-    # mean = [0, 0, 0]
-    # cov = [[1, 0, 0],
-    #        [0, 1, 0],
-    #        [0, 0, 4]]
-    # pts = np.random.multivariate_normal(mean, cov, size)
-    # x1 = pts[:, 0:2]
-    # x2 = np.stack((pts[:, 0], pts[:, 2]), 1)
-    # if relation == 'redundancy':
-    #     y = pts[:, 0]
-    # elif relation == 'uniqueness':
-    #     y = pts[:, 1]
-    # elif relation == 'synergy':
-    #     y = pts[:, 1] + pts[:, 2]
-
+    x1 = pts[:, 0:2]
+    x2 = pts[:, 2:4]
+    w1 = [1, 3]
+    w2 = [2, 1]
+    y = x1 @ w1 + x2 @ w2
     return {"x1": x1,
             "x2": x2,
-            "y": y}
+            "y": y[:, np.newaxis]}
 
 
 def gen_xor_data(var_lin=1, size=4096):
