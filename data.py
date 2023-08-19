@@ -35,7 +35,7 @@ def prep_data(args, data, device):
 def gen_data(args):
     if args.data == 'toy':
         # vis_toy_data(x1, x2, y)
-        return gen_toy_data(noise=False, size=args.dataset_size)
+        return gen_toy_data(rho=args.rho, ratio=args.ratio, size=args.dataset_size)
     if args.data == 'multi':
         return gen_multi_data(args.dataset_size)
     elif args.data == 'xor':
@@ -46,15 +46,15 @@ def gen_data(args):
         raise NotImplementedError
 
 
-def gen_toy_data(noise=False, size=4096):
+def gen_toy_data(rho, ratio, size, noise=False):
     """
     x1: shape (size, 1)
     x2: shape (size, 1)
     y: shape (size, 1)
     """
     mean = [0, 0]
-    cov = [[1, 0],
-           [0, 4]]
+    cov = [[1, rho*ratio],
+           [rho*ratio, ratio**2]]
     pts = np.random.multivariate_normal(mean, cov, size)
     x1 = pts[:, [0]]
     x2 = pts[:, [1]]
@@ -68,7 +68,7 @@ def gen_toy_data(noise=False, size=4096):
             "y": y}
 
 
-def gen_multi_data(size=4096):
+def gen_multi_data(size):
     mean = [0, 0, 0, 0]
     cov = [[1, 0, 0, 0],
            [0, 1, 0, 0],
@@ -85,7 +85,7 @@ def gen_multi_data(size=4096):
             "y": y[:, np.newaxis]}
 
 
-def gen_xor_data(var_lin=1, size=4096):
+def gen_xor_data(var_lin, size):
     x1 = np.array([[1, 1],
                    [1, -1],
                    [-1, 1],
@@ -108,7 +108,7 @@ def gen_xor_data(var_lin=1, size=4096):
             "y": y}
 
 
-def gen_fission_data(size=4096):
+def gen_fission_data(size):
     x = np.random.normal(0, 2, size)[:, np.newaxis]
     return {"x": x,
             "y1": 0.5*x,
