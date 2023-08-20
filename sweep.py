@@ -42,7 +42,7 @@ def toy_sweep(args):
 
 
 def deep_sweep(args):
-    assert args.data == 'deep_fusion', "Cannot do deep_sweep for {} datasets".format(args.data)
+    assert args.mode == 'deep_fusion', "Cannot do deep_sweep for {} network".format(args.data)
     data = gen_data(args)
     for i in range(1, args.depth+1):
         args.fuse_depth = i
