@@ -11,15 +11,16 @@ def config():
     parser.add_argument("--activation", type=str, default='linear', help='activation function')
     parser.add_argument("--bias", action="store_true", help='bias or unbiased linear layer')
 
-    # data set
+    # param for data set
     parser.add_argument("--data", type=str, default='toy', help='data type')
     parser.add_argument("--dataset_size", type=int, default=4096, help='number of training samples')
-    parser.add_argument("--mode", type=str, default='shallow', help='model type')
     parser.add_argument("--rho", type=float, default=0, help='Pearson correlation coefficient in toy dataset')
     parser.add_argument("--ratio", type=float, default=2, help='sigma_A / sigma_B ratio in toy dataset')
     parser.add_argument("--var_lin", type=float, default=1, help='variance of the linear modality in XOR dataset')
     
-    # param for deep_fusion mode
+    # param for network
+    parser.add_argument("--sweep", type=str, default='single', choices={'single', 'toy_sweep', 'deep_sweep', 'xor_sweep'}, help='sweep option')
+    parser.add_argument("--mode", type=str, default='shallow', choices={'shallow', 'early_fusion', 'late_fusion', 'deep_fusion'}, help='model type')
     parser.add_argument("--depth", type=int, default=6, help='number of layers ')
     parser.add_argument("--fuse_depth", type=int, default=2, help='fuse at which layer')
 
