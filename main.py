@@ -13,6 +13,7 @@ from util import *
 from numerical import *
 from data import *
 from vis import *
+from sweep import *
 
 
 def creat_network(args, in_dim, out_dim):
@@ -119,21 +120,17 @@ def train(data, args):
         plt.show()
     else:
         plot_training(args, losses, weights)
+        return losses, weights
 
 
 if __name__ == "__main__":
     args = config().parse_args()
-    
-    data = gen_data(args)
-    
-    if args.mode == "deep_fusion":
-        plt.figure(figsize=(10, 5))
-        for i in range(1, args.depth+1):
-            args.fuse_depth = i
-            train(data, args)
-        plt.title("Loss records with different fusion points (total depth $L$= {:d})".format(args.depth))
-        plt.ylabel("Loss")
-    else:
+    if args.sweep == 'single':
+        data = gen_data(args)
         train(data, args)
-
-    plt.show()
+    elif args.sweep == 'toy_sweep':
+        toy_sweep(args)
+    elif args.sweep == 'deep+sweep':
+        deep_sweep(args)
+    elif args.sweep(args):
+        xor_sweep(args)
