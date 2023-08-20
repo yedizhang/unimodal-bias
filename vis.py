@@ -19,25 +19,6 @@ def vis_toy_data(x1, x2, y, plot_2D=False):
     plt.show()
 
 
-def xor_sweep(args):
-    assert args.data == 'xor', "Cannot do xor_sweep for {} datasets".format(args.data)
-    from data import gen_data
-    from main import train
-    vars = np.hstack((np.linspace(0.01, 2, 30),
-                      np.linspace(2.1, 5, 10)))
-    dirs = []
-    for var in vars:
-        args.var_lin = var
-        x1, x2, y = gen_data(args)
-        dir = train(x1, x2, y, args)
-        dirs.append(dir)
-        print(var)
-    plt.scatter(vars, np.array(dirs), c='k')
-    plt.xlabel("Variance of linear modality")
-    plt.ylabel("Number of directions")
-    plt.show()
-
-
 def vis_relu_3d(W):
     fig = plt.figure()
     ax = fig.add_subplot(projection='3d')
@@ -93,13 +74,13 @@ def plot_training(args, losses, weights=None):
         plt.plot(losses / losses[0], alpha=0.7, label=args.fuse_depth-1)  # label=args.fuse_depth-1, str(args.hid_width)+" hidden neurons"
     else:
         plt.figure(figsize=(10, 5))
-        plt.plot(losses / losses[0], c='k', alpha=0.7, label="loss")
+        plt.plot(losses / losses[0], c='k', label="loss")
     plt.xlabel("Epoch")
     # plt.ylim((-0.05, 1.05))
     plt.title(args.mode)  # args.mode+" linear network with 8 hidden neurons"
     if weights is not None:
         plt.plot(weights[:, 0], color='g', alpha=0.7, label="$W_{1A}$")
-        plt.plot(weights[:, 1], color='m', alpha=0.7, label="$W_{1B}$")
+        plt.plot(weights[:, -1], color='m', alpha=0.7, label="$W_{1B}$")
         # if args.mode == "shallow":
         #     t = np.arange(args.epoch)
         #     tau = 0.5 / args.lr
