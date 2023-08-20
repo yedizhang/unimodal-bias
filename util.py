@@ -26,3 +26,8 @@ def count_angle(sph):
     a_val, a_num = np.unique(azimuth, return_counts=True)
     val, num = np.unique(polar*azimuth, return_counts=True)
     return len(num)
+
+
+def time_half(arr):
+    temp = (arr - 0.5) ** 2
+    return np.argmin(temp)
