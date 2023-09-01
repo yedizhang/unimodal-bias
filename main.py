@@ -90,7 +90,7 @@ def train(data, args):
             predictions= network(x1_tensor, x2_tensor)
         else:
             predictions = network(x_tensor)
-        loss = nn.MSELoss()(predictions, y_tensor)
+        loss = 0.5*nn.MSELoss()(predictions, y_tensor)
         loss.backward()
         optimizer.step()
         losses[i] = loss.item()
@@ -130,7 +130,7 @@ if __name__ == "__main__":
         train(data, args)
     elif args.sweep == 'toy_sweep':
         toy_sweep(args)
-    elif args.sweep == 'deep+sweep':
+    elif args.sweep == 'deep_sweep':
         deep_sweep(args)
     elif args.sweep(args):
         xor_sweep(args)

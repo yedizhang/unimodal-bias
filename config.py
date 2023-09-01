@@ -4,7 +4,7 @@ def config():
     parser = argparse.ArgumentParser()
     # training
     parser.add_argument("--epoch", type=int, default=1000, help='number of epochs')
-    parser.add_argument("--lr", type=float, default=0.02, help='learning rate')
+    parser.add_argument("--lr", type=float, default=0.04, help='learning rate')
     parser.add_argument("--reg", type=float, default=0, help='regularization, i.e. weight_decay')
     parser.add_argument("--init", type=float, default=1e-12, help='weight initialization')
     parser.add_argument("--hid_width", type=int, default=1, help='number of hidden neurons')
