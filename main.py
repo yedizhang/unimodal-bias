@@ -125,6 +125,10 @@ def train(data, args):
                     # plt.savefig('frame/{:04d}.jpg'.format(i), dpi=300)
                 else:
                     ims.append(vis_relu(args, data_res, feat, losses[:i], axs))
+        if args.sweep != 'single' and losses[i] < 10e-5:
+            losses, weights = losses[:i], weights[:i]
+            print("Converged at epoch ", i)
+            break
 
     # count = count_angle(cart2sph(feat))
     # vis_relu_3d(feat)
