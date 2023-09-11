@@ -163,12 +163,15 @@ class deep_fusion(nn.Module):
         return x
 
     def _init_weights(self, gamma):
+        l = 0
         for m in self.modules():
             if isinstance(m, nn.Linear):
+                l += 1
                 nn.init.normal_(m.weight, mean=0, std=gamma)
-                # nn.init.orthogonal_(m.weight, gain=gamma)
-                # nn.init.constant_(m.weight, val=gamma)
-                # print("We are now using constant init")
+                if l <= 2*(self.fuse_depth-1):
+                    m.weight = torch.nn.Parameter(m.weight * gamma / torch.linalg.norm(m.weight))
+                else:
+                    m.weight = torch.nn.Parameter(m.weight * gamma * 2**0.5 / torch.linalg.norm(m.weight))
 
 
 class fission(nn.Module):
