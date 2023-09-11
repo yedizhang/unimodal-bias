@@ -19,7 +19,7 @@ def config():
     parser.add_argument("--var_lin", type=float, default=1, help='variance of the linear modality in XOR dataset')
     
     # param for network
-    parser.add_argument("--sweep", type=str, default='single', choices={'single', 'toy_sweep', 'deep_sweep', 'xor_sweep'}, help='sweep option')
+    parser.add_argument("--sweep", type=str, default='single', choices={'single', 'depth_single', 'toy_sweep', 'depth_sweep', 'xor_sweep'}, help='sweep option')
     parser.add_argument("--mode", type=str, default='shallow', choices={'shallow', 'early_fusion', 'late_fusion', 'deep_fusion'}, help='model type')
     parser.add_argument("--depth", type=int, default=6, help='number of layers ')
     parser.add_argument("--fuse_depth", type=int, default=2, help='fuse at which layer')

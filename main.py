@@ -45,6 +45,15 @@ def unpack_weights(parameters, args, w_dim, in_dim):
     elif args.mode == "early_fusion":
         W_tot = (W[1] @ W[0]).squeeze()
         in_hid = W[0]
+        # W1 = W[0]
+        # W2 = W[1]
+        # W_gt = np.array([1,2])
+        # W_gt = W_gt / np.linalg.norm(W_gt)
+        # M = W1.T @ W1 + np.linalg.norm(W2) * np.eye(2)
+        # align = W_gt.T @ M @ W_gt / np.linalg.norm(M)
+        # print(np.linalg.eigvals(W1.T @ W1).real)
+        # print(np.linalg.eigvals(M).real)
+        # print(align)
     elif args.mode == "late_fusion":
         W_tot[:in_dim[0]] = W[-1][:, :hid] @ W[0]
         W_tot[in_dim[0]:] = W[-1][:, hid:] @ W[1]
@@ -52,6 +61,7 @@ def unpack_weights(parameters, args, w_dim, in_dim):
     elif args.mode == "deep_fusion":
         if args.fuse_depth == 1:  # deep early fusion
             in_hid = W[0]
+            W_tot = np.eye(w_dim)
             for i in range(len(W)):
                 W_tot = W[i] @ W_tot
         else:  # deep late fusion
@@ -59,10 +69,17 @@ def unpack_weights(parameters, args, w_dim, in_dim):
             h1, h2 = np.eye(in_dim[0]), np.eye(in_dim[1])
             for i in range(0, Lf):
                 h1, h2 = W[2*i] @ h1, W[2*i+1] @ h2
+                # print(np.linalg.norm(W[2*i])**2 + np.linalg.norm(W[2*i+1])**2)
             h = np.concatenate((W[2*Lf][:, :hid] @ h1, W[2*Lf][:, hid:] @ h2), -1)
+            # d = np.eye(h.shape[0])
             for i in range(2*Lf+1, len(W)):
+                # print(np.linalg.norm(W[i])**2)
                 h = W[i] @ h
+                # d = W[i] @ d
+            # print(np.linalg.norm(d))
             W_tot = h
+            # W_tot[:,0] = np.linalg.norm(W[1])
+            # W_tot[:,1] = np.linalg.norm(W[0])
     elif args.mode == "fission":
         W_tot[0] = W[1] @ W[0][:hid, :] 
         W_tot[1] = W[2] @ W[0][hid:, :] 
@@ -105,7 +122,7 @@ def train(data, args):
                     axs[1].cla()
                     axs[2].cla()
                     ims.append(vis_relu(args, data_res, feat, losses[:i], axs))
-                    plt.savefig('frame/{:04d}.jpg'.format(i), dpi=300)
+                    # plt.savefig('frame/{:04d}.jpg'.format(i), dpi=300)
                 else:
                     ims.append(vis_relu(args, data_res, feat, losses[:i], axs))
 
@@ -128,9 +145,11 @@ if __name__ == "__main__":
     if args.sweep == 'single':
         data = gen_data(args)
         train(data, args)
+    elif args.sweep == 'depth_single':
+        depth_single(args)
     elif args.sweep == 'toy_sweep':
         toy_sweep(args)
-    elif args.sweep == 'deep_sweep':
-        deep_sweep(args)
-    elif args.sweep(args):
+    elif args.sweep == 'depth_sweep':
+        depth_sweep(args)
+    elif args.sweep == 'xor_sweep':
         xor_sweep(args)
