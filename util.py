@@ -28,6 +28,21 @@ def count_angle(sph):
     return len(num)
 
 
-def time_half(arr):
-    temp = (arr - 0.5) ** 2
-    return np.argmin(temp)
+def bivariate_normal(X, Y, sigmax=1.0, sigmay=1.0, mux=0.0, muy=0.0, sigmaxy=0.0):
+    Xmu = X-mux
+    Ymu = Y-muy
+    rho = sigmaxy/(sigmax*sigmay)
+    z = Xmu**2/sigmax**2 + Ymu**2/sigmay**2 - 2*rho*Xmu*Ymu/(sigmax*sigmay)
+    denom = 2*np.pi*sigmax*sigmay*np.sqrt(1-rho**2)
+    return np.exp(-z/(2*(1-rho**2))) / denom
+
+
+def time_half(args, arr, weak=False):
+    if weak or args.ratio == 1:
+        half = np.max(arr) / 2
+    else:
+        half = (1 + args.rho / args.ratio) / 2
+        if args.activation == 'relu':
+            half *= 2
+    res = (arr - half) ** 2
+    return np.argmin(res)
