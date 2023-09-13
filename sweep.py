@@ -111,12 +111,12 @@ def depth_single(args):
     assert args.mode == 'deep_fusion', "Cannot do deep_sweep for {} network".format(args.data)
     data = gen_data(args)
     plt.figure(figsize=(4, 3))
-    for i in range(1, args.depth+1):
+    for i in range(args.depth, 0, -1):
         args.fuse_depth = i
         train(data, args)
     plt.ylabel("Loss")
     plt.legend()
-    plt.savefig('depthfuse{:d}_fuse{:d}.svg'.format(args.depth, args.fuse_depth-1))
+    plt.savefig('depthfuse{:d}.pdf'.format(args.depth))
     plt.show()
 
 
