@@ -41,56 +41,68 @@ def lag_depth(args):
 
 
 def sweep(args, repeat=1):
-    lag = 0
+    lag, bias = 0, 0
     for _ in range(repeat):
         data = gen_data(args)
         losses, weights = train(data, args)
         if losses[-1] < 1e-3:
-            lag += time_half(args, weights[:, 0], True) / time_half(args, weights[:, 1])
+            ta = time_half(args, weights[:, 1])
+            tb = time_half(args, weights[:, 0], True)
+            lag += tb / ta
+            bias += (weights[(ta+tb)//2, 1] - weights[-1, 1]) / weights[-1, 1]
         else:
             repeat -= 1
     assert repeat != 0, "Warning: training did not converge!"
-    return lag / repeat
+    return lag / repeat, bias / repeat
 
 
 def toy_sweep(args):
-    plt.figure(figsize=(4, 3))
     repeat = 5
-    rho_theo = np.linspace(-0.92, 0.92, 100)
-    rho_exp = np.linspace(-0.9, 0.9, 9)
+    fig1, ax1 = plt.subplots(figsize=(4, 3))
+    fig2, ax2 = plt.subplots(figsize=(4, 3))
+    rho_theo, rho_exp = np.linspace(-0.92, 0.92, 100), np.linspace(-0.9, 0.9, 9)
     lag_lin, lag_relu = np.zeros(len(rho_exp)), np.zeros(len(rho_exp))
-    for k, ratio in enumerate([2, 1.5, 1]):
+    bias_lin, bias_relu = np.zeros(len(rho_exp)), np.zeros(len(rho_exp))
+    for k, ratio in enumerate([3, 2, 1.5, 1]):
         for i, rho in enumerate(rho_exp):
             args.rho, args.ratio = rho, ratio
             args.activation = 'linear'
-            lag_lin[i] = sweep(args, repeat)
+            lag_lin[i], bias_lin[i] = sweep(args, repeat)
             args.activation = 'relu'
-            lag_relu[i] = sweep(args, repeat)
+            lag_relu[i], bias_relu[i] = sweep(args, repeat)
         lag_theo = (ratio**2 - 1) / (1 - rho_theo**2) + 1
-        plt.plot(rho_theo, lag_theo, c=colors[k], label="$\sigma_A / \sigma_B = {}$".format(ratio))
-        plt.scatter(rho_exp, lag_lin, alpha=0.8, edgecolors=colors[k], facecolors='none', marker='o')
-        plt.scatter(rho_exp, lag_relu, alpha=0.8, c=colors[k], marker='x')
+        ax1.plot(rho_theo, lag_theo, c=colors[k], label="$\sigma_A / \sigma_B = {}$".format(ratio))
+        ax1.scatter(rho_exp, lag_lin, alpha=0.8, edgecolors=colors[k], facecolors='none', marker='o')
+        ax1.scatter(rho_exp, lag_relu, alpha=0.8, c=colors[k], marker='x')
         np.save('sweep/time_late_ratio{}.npy'.format(ratio), [rho_exp, lag_lin, lag_relu])
-    plt.xlabel(r"Correlation coefficient $\rho$")
-    plt.ylabel(r"Time ratio $t_B / t_A$")
-    plt.gca().set_yscale('log')
-    plt.legend()
-    plt.tight_layout(pad=0.5)
-    plt.savefig("sweep/toy_sweep_{}hid_{}repeat.pdf".format(args.hid_width, repeat))
-    plt.savefig("sweep/toy_sweep_{}hid_{}repeat.svg".format(args.hid_width, repeat))
+        if ratio != 1:
+            ax2.plot(rho_theo, rho_theo/ratio, c=colors[k], label="$\sigma_A / \sigma_B = {}$".format(ratio))
+            ax2.scatter(rho_exp, bias_lin, alpha=0.8, edgecolors=colors[k], facecolors='none', marker='o')
+            ax2.scatter(rho_exp, bias_relu, alpha=0.8, c=colors[k], marker='x')
+    ax1.set_xlabel(r"Correlation coefficient $\rho$")
+    ax1.set_ylabel(r"Time ratio $t_B / t_A$")
+    ax1.set_yscale('log')
+    ax2.set_xlabel(r"Correlation coefficient $\rho$")
+    ax2.set_ylabel(r"$\hat w_A - w_A^*$")
+    fig1.legend(loc='upper center'), fig2.legend(loc='upper left')
+    fig1.tight_layout(pad=0.5)
+    fig1.savefig("sweep/toy_sweep_time_{}hid_{}repeat.pdf".format(args.hid_width, repeat))
+    plt.legend(loc='upper left')
+    fig2.tight_layout(pad=0.5)
+    fig2.savefig("sweep/toy_sweep_bias_{}hid_{}repeat.pdf".format(args.hid_width, repeat))
     plt.show()
 
 
 def depth_sweep(args):
     plt.figure(figsize=(4, 3))
-    repeat = 10
+    repeat = 5
     rho_theo = np.linspace(-0.92, 0.92, 100)
     rho_exp = np.linspace(-0.9, 0.9, 9)
     lag_exp, lag_theo = np.zeros(len(rho_exp)), np.zeros(len(rho_theo))
     for k, Lf in enumerate([4, 3, 2, 1]):
         for i, rho in enumerate(rho_exp):
             args.rho, args.fuse_depth = rho, Lf
-            lag_exp[i] = sweep(args, repeat)
+            lag_exp[i], _ = sweep(args, repeat)
         for i, rho in enumerate(rho_theo):
             args.rho, args.fuse_depth = rho, Lf
             lag_theo[i] = lag_depth(args)
@@ -99,11 +111,11 @@ def depth_sweep(args):
         np.save('sweep/time_deep_Lf{}.npy'.format(Lf), [rho_exp, lag_exp])
     plt.xlabel(r"Correlation coefficient $\rho$")
     plt.ylabel(r"Time ratio $t_B / t_A$")
+    plt.ylim((0.86, 24.12))
     plt.gca().set_yscale('log')
     plt.legend()
     plt.tight_layout(pad=0.5)
-    plt.savefig("sweep/depth{}_sweep_{}hid_{}repeat.pdf".format(args.depth, args.hid_width, repeat))
-    plt.savefig("sweep/depth{}_sweep_{}hid_{}repeat.svg".format(args.depth, args.hid_width, repeat))
+    plt.savefig("sweep/depth{}_sweep_ratio{}_{}hid_{}repeat.pdf".format(args.depth, args.ratio, args.hid_width, repeat))
     plt.show()
 
 
