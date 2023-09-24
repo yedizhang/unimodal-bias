@@ -58,8 +58,8 @@ def sweep(args):
 
 
 def toy_sweep(args):
-    fig1, ax1 = plt.subplots(figsize=(4, 3))
-    fig2, ax2 = plt.subplots(figsize=(4, 3))
+    fig1, ax1 = plt.subplots(figsize=(4, 3.3))
+    fig2, ax2 = plt.subplots(figsize=(4, 3.3))
     rho_theo, rho_exp = np.linspace(-0.92, 0.92, 100), np.linspace(-0.9, 0.9, 9)
     lag_lin, lag_relu = np.zeros(len(rho_exp)), np.zeros(len(rho_exp))
     bias_lin, bias_relu = np.zeros(len(rho_exp)), np.zeros(len(rho_exp))
@@ -83,12 +83,12 @@ def toy_sweep(args):
     ax1.set_ylabel(r"Time ratio $t_B / t_A$")
     ax1.set_yscale('log')
     ax2.set_xlabel(r"Correlation coefficient $\rho$")
-    ax2.set_ylabel(r"$\hat w_A - w_A^*$")
-    fig1.legend(loc='upper center'), fig2.legend(loc='upper left')
-    fig1.tight_layout(pad=0.5)
+    ax2.set_ylabel(r"Misattribution $W_{A}^{tot}(\infty) - W_{A}^{tot}(t_{uni})$")
+    ax1.legend(loc='upper center')
+    ax2.legend(loc='upper left')
+    fig1.tight_layout(pad=0.2)
+    fig2.tight_layout(pad=0.2)
     fig1.savefig("sweep/toy_sweep_time_{}hid_{}repeat.pdf".format(args.hid_width, args.repeat))
-    plt.legend(loc='upper left')
-    fig2.tight_layout(pad=0.5)
     fig2.savefig("sweep/toy_sweep_bias_{}hid_{}repeat.pdf".format(args.hid_width, args.repeat))
     plt.show()
 
