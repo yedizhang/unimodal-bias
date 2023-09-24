@@ -1,3 +1,6 @@
 __pycache__
 img
-run.sh
+fig
+*.pdf
+*.svg
+*.sh
