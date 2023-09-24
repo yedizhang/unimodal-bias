@@ -8,7 +8,7 @@ from main import train
 from data import gen_data
 from util import *
 plt.rc('font', family="Arial")
-plt.rcParams['font.size'] = '14'
+plt.rcParams['font.size'] = '12'
 colors = [plt.get_cmap('Set1')(i) for i in range(9)]
 
 
@@ -40,7 +40,8 @@ def lag_depth(args):
         return 1 + lag/I[0]
 
 
-def sweep(args, repeat=1):
+def sweep(args):
+    repeat = args.repeat
     lag, bias = 0, 0
     for _ in range(repeat):
         data = gen_data(args)
@@ -57,7 +58,6 @@ def sweep(args, repeat=1):
 
 
 def toy_sweep(args):
-    repeat = 5
     fig1, ax1 = plt.subplots(figsize=(4, 3))
     fig2, ax2 = plt.subplots(figsize=(4, 3))
     rho_theo, rho_exp = np.linspace(-0.92, 0.92, 100), np.linspace(-0.9, 0.9, 9)
@@ -67,9 +67,9 @@ def toy_sweep(args):
         for i, rho in enumerate(rho_exp):
             args.rho, args.ratio = rho, ratio
             args.activation = 'linear'
-            lag_lin[i], bias_lin[i] = sweep(args, repeat)
+            lag_lin[i], bias_lin[i] = sweep(args)
             args.activation = 'relu'
-            lag_relu[i], bias_relu[i] = sweep(args, repeat)
+            lag_relu[i], bias_relu[i] = sweep(args)
         lag_theo = (ratio**2 - 1) / (1 - rho_theo**2) + 1
         ax1.plot(rho_theo, lag_theo, c=colors[k], label="$\sigma_A / \sigma_B = {}$".format(ratio))
         ax1.scatter(rho_exp, lag_lin, alpha=0.8, edgecolors=colors[k], facecolors='none', marker='o')
@@ -86,23 +86,22 @@ def toy_sweep(args):
     ax2.set_ylabel(r"$\hat w_A - w_A^*$")
     fig1.legend(loc='upper center'), fig2.legend(loc='upper left')
     fig1.tight_layout(pad=0.5)
-    fig1.savefig("sweep/toy_sweep_time_{}hid_{}repeat.pdf".format(args.hid_width, repeat))
+    fig1.savefig("sweep/toy_sweep_time_{}hid_{}repeat.pdf".format(args.hid_width, args.repeat))
     plt.legend(loc='upper left')
     fig2.tight_layout(pad=0.5)
-    fig2.savefig("sweep/toy_sweep_bias_{}hid_{}repeat.pdf".format(args.hid_width, repeat))
+    fig2.savefig("sweep/toy_sweep_bias_{}hid_{}repeat.pdf".format(args.hid_width, args.repeat))
     plt.show()
 
 
 def depth_sweep(args):
     plt.figure(figsize=(4, 3))
-    repeat = 5
     rho_theo = np.linspace(-0.92, 0.92, 100)
     rho_exp = np.linspace(-0.9, 0.9, 9)
     lag_exp, lag_theo = np.zeros(len(rho_exp)), np.zeros(len(rho_theo))
     for k, Lf in enumerate([4, 3, 2, 1]):
         for i, rho in enumerate(rho_exp):
             args.rho, args.fuse_depth = rho, Lf
-            lag_exp[i], _ = sweep(args, repeat)
+            lag_exp[i], _ = sweep(args)
         for i, rho in enumerate(rho_theo):
             args.rho, args.fuse_depth = rho, Lf
             lag_theo[i] = lag_depth(args)
@@ -115,7 +114,7 @@ def depth_sweep(args):
     plt.gca().set_yscale('log')
     plt.legend()
     plt.tight_layout(pad=0.5)
-    plt.savefig("sweep/depth{}_sweep_ratio{}_{}hid_{}repeat.pdf".format(args.depth, args.ratio, args.hid_width, repeat))
+    plt.savefig("sweep/depth{}_sweep_ratio{}_{}hid_{}repeat.pdf".format(args.depth, args.ratio, args.hid_width, args.repeat))
     plt.show()
 
 
