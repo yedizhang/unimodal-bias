@@ -3,9 +3,12 @@ import matplotlib
 import matplotlib.pyplot as plt
 import matplotlib.animation as animation
 from cycler import cycler
+from util import *
 from numerical import *
+plt.rc('axes', axisbelow=True)
 plt.rc('font', family="Arial")
 plt.rcParams['font.size'] = '14'
+colors = [plt.get_cmap('Set1')(i) for i in range(9)]
 
 
 def vis_toy_data(x1, x2, y, plot_2D=False):
@@ -69,29 +72,57 @@ def vis_relu(args, data, W, losses, axs):
 
 
 def plot_training(args, losses, weights=None):
+    plt.rcParams['axes.spines.right'] = False
+    plt.rcParams['axes.spines.top'] = False
     if args.mode == "deep_fusion":
-        plt.rc('axes', prop_cycle=(cycler('color', list(matplotlib.colors.BASE_COLORS))))
-        plt.plot(losses / losses[0], alpha=0.7, label=args.fuse_depth-1)  # label=args.fuse_depth-1, str(args.hid_width)+" hidden neurons"
+        plt.rc('axes', prop_cycle=(cycler('color', colors)))
+        plt.plot(losses / losses[0], linewidth=2, label="$L_f={}$".format(args.fuse_depth))  # label=args.fuse_depth-1, str(args.hid_width)+" hidden neurons"
     else:
-        plt.figure(figsize=(10, 5))
-        plt.plot(losses / losses[0], c='k', label="loss")
+        plt.figure(figsize=(4, 3))
+        plt.plot(losses / losses[0], linewidth=2, c='k', label="Loss")
+        if weights is not None:
+            plt.plot(weights[:, -1]/weights[-1, -1], linewidth=2, c='b', label=r"$W_{A}^{tot}$")  # \frac{W_{A}^{tot}(t)}{W_{A}^{tot}(\infty)}
+            plt.plot(weights[:, 0]/weights[-1, 0], linewidth=2, c='fuchsia', label=r"$W_{B}^{tot}$")  # \frac{W_{B}^{tot}(t)}{W_{B}^{tot}(\infty)}
+            # plt.plot(np.arctan(weights[:, 0]/weights[:, 1]), color='b', alpha=0.7, label="angle")
+            # plt.plot((weights[:, 0]**2+weights[:, 1]**2)/2, color='c', alpha=0.7, label="$|W_1|^2$")
+            # if args.mode == "shallow":
+            #     t = np.arange(args.epoch)
+            #     tau = 0.5 / args.lr
+            #     w1 = - np.exp(-2*t/tau) + 1
+            #     w2 = - np.exp(-4*t/tau) + 1
+            # if args.mode == "late_fusion":
+            #     t = np.arange(args.epoch)
+            #     tau = 0.5 / args.lr
+            #     c = 1 / args.init ** 2
+            #     w1 = 1 / (c * np.exp(-2*t/tau) + 1)
+            #     w2 = 1 / (c * np.exp(-8*t/tau) + 1)
+            # plt.plot(w1, 'g--')
+            # plt.plot(w2, 'm--')
+            # plt.legend(loc='center right')
+    plt.title(args.mode)
     plt.xlabel("Epoch")
-    # plt.ylim((-0.05, 1.05))
-    plt.title(args.mode)  # args.mode+" linear network with 8 hidden neurons"
-    if weights is not None:
-        plt.plot(weights[:, 0], color='g', alpha=0.7, label="$W_{1A}$")
-        plt.plot(weights[:, -1], color='m', alpha=0.7, label="$W_{1B}$")
-        # if args.mode == "shallow":
-        #     t = np.arange(args.epoch)
-        #     tau = 0.5 / args.lr
-        #     w1 = - np.exp(-2*t/tau) + 1
-        #     w2 = - np.exp(-4*t/tau) + 1
-        # if args.mode == "late_fusion":
-        #     t = np.arange(args.epoch)
-        #     tau = 0.5 / args.lr
-        #     c = 1 / args.init ** 2
-        #     w1 = 1 / (c * np.exp(-2*t/tau) + 1)
-        #     w2 = 1 / (c * np.exp(-8*t/tau) + 1)
-        # plt.plot(w1, 'g--')
-        # plt.plot(w2, 'm--')
-    plt.legend()
+    plt.ylabel("Loss")
+    plt.xlim((0, args.epoch))
+    plt.yticks([0,0.5,1])
+
+    # for superficial modality preference
+    # plt.hlines(0.36, 0, args.epoch-20, 'grey', linestyles='dotted', linewidth=2)
+    # plt.hlines(0.64, 0, args.epoch-20, 'k', linestyles='dotted', linewidth=2)
+    # plt.yticks([0, 0.36, 0.64, 1], ['0', r'$\mathcal {L}(\mathcal {M}_B)$', r'$\mathcal {L}(\mathcal {M}_A)$', 1])
+    # plt.xticks([0, 100, 200, 300])
+
+    # for illustrating t_A, t_B
+    # tA = time_half(args, weights[:, -1], True)
+    # tB = time_half(args, weights[:, 0], True)
+    # ylim = plt.gca().get_ylim()
+    # plt.vlines(tA, ylim[0], np.max(weights[:, -1])/2, 'b', linestyles='dotted', linewidth=2)
+    # plt.vlines(tB, ylim[0], 0.5, 'fuchsia', linestyles='dotted', linewidth=2)
+    # plt.gca().set_ylim(ylim)
+    # plt.xticks([0, tA, tB, args.epoch], ['0', '$t_A$', '$t_B$', args.epoch])
+    # plt.gca().get_xticklabels()[1].set_color('b')
+    # plt.gca().get_xticklabels()[2].set_color('fuchsia')
+    # plt.hlines(0.75, 0, tA+30, 'b', linestyles='dotted', linewidth=2)
+    # plt.hlines(1, 0, args.epoch, 'b', linestyles='dotted', linewidth=2)
+    # plt.yticks([0, 1, 1.25], ['0', r'$W_{A}^{tot}(\infty)$', r'$W_{A}^{tot}(t_{uni})$'])
+
+    plt.tight_layout(pad=0.5)
