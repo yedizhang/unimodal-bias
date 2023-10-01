@@ -15,7 +15,7 @@ colors = [plt.get_cmap('Set1')(i) for i in range(9)]
 def integrand(u, wa, wb, L, Lf, init):
     k = wb/wa
     if Lf == 2:
-         ub = np.exp(k*np.log(u) + (1-k)*np.log(init))
+        ub = np.exp(k*np.log(u) + (1-k)*np.log(init))
     else:
         ub = (k*u**(2-Lf) + (1-k)*init**(2-Lf)) ** (1/(2-Lf))
     denominator = wa * u**(Lf-1) * (u**2 + ub**2) ** ((L-Lf)/2)
@@ -25,6 +25,8 @@ def integrand(u, wa, wb, L, Lf, init):
 def lag_depth(args):
     if args.fuse_depth == 1:
         return 1
+    elif args.fuse_depth == args.depth:
+        return 1 + (args.ratio**2 - 1) / (1 - args.rho**2)
     else:
         wa = args.ratio**2 + args.rho * args.ratio
         wb = 1 + args.rho * args.ratio
@@ -74,7 +76,7 @@ def toy_sweep(args):
         ax1.plot(rho_theo, lag_theo, c=colors[k], label="$\sigma_A / \sigma_B = {}$".format(ratio))
         ax1.scatter(rho_exp, lag_lin, alpha=0.8, edgecolors=colors[k], facecolors='none', marker='o')
         ax1.scatter(rho_exp, lag_relu, alpha=0.8, c=colors[k], marker='x')
-        np.save('sweep/time_late_ratio{}.npy'.format(ratio), [rho_exp, lag_lin, lag_relu])
+        np.save('sweep/toy_sweep_100hid_1e-9init_5repeat/time_ratio{}.npy'.format(ratio), [rho_exp, lag_lin, lag_relu])
         if ratio != 1:
             ax2.plot(rho_theo, rho_theo/ratio, c=colors[k], label="$\sigma_A / \sigma_B = {}$".format(ratio))
             ax2.scatter(rho_exp, bias_lin, alpha=0.8, edgecolors=colors[k], facecolors='none', marker='o')
@@ -88,8 +90,8 @@ def toy_sweep(args):
     ax2.legend(loc='upper left')
     fig1.tight_layout(pad=0.2)
     fig2.tight_layout(pad=0.2)
-    fig1.savefig("sweep/toy_sweep_time_{}hid_{}repeat.pdf".format(args.hid_width, args.repeat))
-    fig2.savefig("sweep/toy_sweep_bias_{}hid_{}repeat.pdf".format(args.hid_width, args.repeat))
+    fig1.savefig("sweep/toy_sweep_100hid_1e-9init_5repeat/toy_sweep_time_{}hid_{}repeat.pdf".format(args.hid_width, args.repeat))
+    fig2.savefig("sweep/toy_sweep_100hid_1e-9init_5repeat/toy_sweep_bias_{}hid_{}repeat.pdf".format(args.hid_width, args.repeat))
     plt.show()
 
 
@@ -110,7 +112,6 @@ def depth_sweep(args):
         np.save('sweep/time_deep_Lf{}.npy'.format(Lf), [rho_exp, lag_exp])
     plt.xlabel(r"Correlation coefficient $\rho$")
     plt.ylabel(r"Time ratio $t_B / t_A$")
-    plt.ylim((0.86, 24.12))
     plt.gca().set_yscale('log')
     plt.legend()
     plt.tight_layout(pad=0.5)
@@ -127,7 +128,55 @@ def depth_single(args):
         train(data, args)
     plt.ylabel("Loss")
     plt.legend()
+    plt.tight_layout(pad=0.5)
     plt.savefig('depthfuse{:d}.pdf'.format(args.depth))
+    plt.show()
+
+
+def ratio_sweep(args):
+    ratio_theo, ratio_exp = np.linspace(1, 3, 100), np.linspace(1.2, 2.8, 5)
+    lag_theo, lag_exp = np.zeros(len(ratio_theo)), np.zeros(len(ratio_exp))
+    plt.figure(figsize=(4, 3))
+    for k, Lf in enumerate([4, 3, 2, 1]):
+        args.fuse_depth = Lf
+        for i, ratio in enumerate(ratio_exp):
+            args.ratio = ratio
+            lag_exp[i], _ = sweep(args)
+        for i, ratio in enumerate(ratio_theo):
+            args.ratio = ratio
+            lag_theo[i] = lag_depth(args)
+        plt.plot(ratio_theo, lag_theo, c=colors[k], label='$L_f$={}'.format(args.fuse_depth))
+        plt.scatter(ratio_exp, lag_exp, alpha=0.8, edgecolors=colors[k], facecolors='none', marker='o')
+    plt.xlabel(r"Variance ratio $\sigma_A / \sigma_B = \sqrt {k}$")
+    plt.ylabel(r"Time ratio $t_B / t_A$")
+    plt.legend()
+    plt.tight_layout(pad=0.5)
+    plt.savefig("ratio_sweep.pdf")
+    plt.show()
+
+
+def init_sweep(args):
+    init_theo, init_exp = np.linspace(0.01, 0.2, 100), np.linspace(0.03, 0.18, 5)
+    lag_theo, lag_exp = np.zeros(len(init_theo)), np.zeros(len(init_exp))
+    plt.figure(figsize=(4, 3))
+    for k, Lf in enumerate([4, 3, 2, 1]):
+        args.fuse_depth = Lf
+        for i, init in enumerate(init_exp):
+            args.init = init
+            lag_exp[i], _ = sweep(args)
+        for i, init in enumerate(init_theo):
+            args.init = init
+            if args.depth == args.fuse_depth:
+                lag_theo = 4*np.ones(len(init_theo))
+            else:
+                lag_theo[i] = lag_depth(args)
+        plt.plot(init_theo, lag_theo, c=colors[k], label='$L_f$={}'.format(args.fuse_depth))
+        plt.scatter(init_exp, lag_exp, alpha=0.8, edgecolors=colors[k], facecolors='none', marker='o')
+    plt.xlabel(r"Initialization $u_0$")
+    plt.ylabel(r"Time ratio $t_B / t_A$")
+    plt.legend()
+    plt.tight_layout(pad=0.5)
+    plt.savefig("init_sweep.pdf")
     plt.show()
 
 
