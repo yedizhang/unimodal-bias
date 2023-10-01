@@ -117,7 +117,6 @@ def train(data, args):
             if args.vis_feat and i % 10 == 0:
                 data_res = data.copy()
                 data_res['y'] = data['y'] - predictions.cpu().detach().numpy()
-                print(i, losses[i])
                 if args.vis_contour:
                     axs[1].cla()
                     axs[2].cla()
@@ -140,7 +139,8 @@ def train(data, args):
         ani.save('early_relu_+-1xor_100hid.mp4', dpi=300)
         plt.show()
     else:
-        plot_training(args, losses, weights)
+        if args.sweep == 'single' or 'depth_single':
+            plot_training(args, losses, weights)
         return losses, weights
 
 
@@ -155,5 +155,9 @@ if __name__ == "__main__":
         toy_sweep(args)
     elif args.sweep == 'depth_sweep':
         depth_sweep(args)
+    elif args.sweep == 'ratio_sweep':
+        ratio_sweep(args)
+    elif args.sweep == 'init_sweep':
+        init_sweep(args)
     elif args.sweep == 'xor_sweep':
         xor_sweep(args)
