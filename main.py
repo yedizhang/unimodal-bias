@@ -114,6 +114,9 @@ def train(data, args):
         
         if args.plot_weight:
             weights[i, :], feat = unpack_weights(network.parameters(), args, w_dim, in_dim)
+            if i % 1000 == 0:
+                print(i, losses[i])
+                fig_feat(args, feat, i)
             if args.vis_feat and i % 10 == 0:
                 data_res = data.copy()
                 data_res['y'] = data['y'] - predictions.cpu().detach().numpy()

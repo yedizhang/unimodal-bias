@@ -71,6 +71,39 @@ def vis_relu(args, data, W, losses, axs):
         return [im1, im2]
 
 
+def fig_feat(args, W, t):
+    x = np.arange(-0.2, 0.205, 0.005)
+    y = np.arange(-0.2, 0.205, 0.005)
+    X, Y = np.meshgrid(x, y)
+    Z = bivariate_normal(X, Y, 2, 1)
+
+    plt.figure(figsize=(4.2, 3))
+    if args.activation == 'relu':
+        plt.scatter(W[:, 0], W[:, 1], linewidths=0.25, s=10, c=W[:, 2], 
+                        #   vmin=-1, vmax=1,
+                        cmap='coolwarm', edgecolors='k')
+        cbar = plt.colorbar(fraction=0.046, pad=0.08)
+        cbar.set_label('$W^1_A$')
+        plt.xlabel("$W^1_{B1}$")
+        plt.ylabel("$W^1_{B2}$")
+        plt.xlim((-0.3, 0.3))
+        plt.ylim((-0.3, 0.3))
+    else:
+        plt.scatter(W[:, -1], W[:, 0], linewidths=0.25, s=10, c='k')
+        plt.contourf(X, Y, Z, 30, vmin=np.min(Z)-0.001, cmap=plt.cm.bone)
+        plt.annotate("", xy=(0.1, 0.1), xytext=(0, 0), arrowprops=dict(arrowstyle="->", color='r', mutation_scale=20))
+        plt.annotate("", xy=(0.137, 0.034), xytext=(0, 0), arrowprops=dict(arrowstyle="->", color='lime', mutation_scale=20))
+        plt.xlabel("$W^1_A$")
+        plt.ylabel("$W^1_B$")
+        plt.xticks([-0.1, 0, 0.1])
+        plt.yticks([-0.1, 0, 0.1])
+    plt.axis('equal')
+    plt.gca().set_adjustable("box")
+    plt.title("Epoch={}".format(t), fontsize=14)
+    plt.tight_layout(pad=0.2)
+    plt.show()
+
+
 def plot_training(args, losses, weights=None):
     plt.rcParams['axes.spines.right'] = False
     plt.rcParams['axes.spines.top'] = False
