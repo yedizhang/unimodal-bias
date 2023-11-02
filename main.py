@@ -27,7 +27,7 @@ def creat_network(args, in_dim, out_dim):
     elif args.mode == "deep_fusion":
         # gamma = np.power(args.init, 1/(1+args.fuse_depth))
         # print("gamma =", gamma)   # init should scale with init1/init2 = exp(depth2/depth1)
-        network = deep_fusion(in_dim, args.hid_width, out_dim, args.depth, args.fuse_depth, args.activation, args.init)
+        network = deep_fusion(in_dim, args.hid_width, out_dim, args.depth, args.fuse_depth, args.activation, args.bias, args.init)
     elif args.mode == "fission":
         network = fission(in_dim, args.hid_width, out_dim, args.bias, args.init)
     print(network)

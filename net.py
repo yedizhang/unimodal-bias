@@ -118,7 +118,7 @@ class deep_fusion(nn.Module):
     """
     A Linear Neural Net with multiple hidden layers
     """
-    def __init__(self, in_dim, hid_dim, out_dim, depth, fuse_depth, activation, gamma):
+    def __init__(self, in_dim, hid_dim, out_dim, depth, fuse_depth, activation, bias, gamma):
         super(deep_fusion, self).__init__()
         self.depth = depth
         self.fuse_depth = fuse_depth
@@ -127,24 +127,24 @@ class deep_fusion(nn.Module):
 
         for i in range(1, fuse_depth):  # iterate 1, ..., fuse_depth-1
             if i == 1:
-                self.layers['encodeA_'+str(i)] = torch.nn.Linear(in_dim[0], hid_dim, bias=False)
-                self.layers['encodeB_'+str(i)] = torch.nn.Linear(in_dim[1], hid_dim, bias=False)
+                self.layers['encodeA_'+str(i)] = torch.nn.Linear(in_dim[0], hid_dim, bias=bias)
+                self.layers['encodeB_'+str(i)] = torch.nn.Linear(in_dim[1], hid_dim, bias=bias)
             else:
-                self.layers['encodeA_'+str(i)] = torch.nn.Linear(hid_dim, hid_dim, bias=False)
-                self.layers['encodeB_'+str(i)] = torch.nn.Linear(hid_dim, hid_dim, bias=False)                
+                self.layers['encodeA_'+str(i)] = torch.nn.Linear(hid_dim, hid_dim, bias=bias)
+                self.layers['encodeB_'+str(i)] = torch.nn.Linear(hid_dim, hid_dim, bias=bias)                
         
         if fuse_depth == 1:  # early fusion
-            self.layers['fuse'] = torch.nn.Linear(sum(in_dim), hid_dim, bias=False)
+            self.layers['fuse'] = torch.nn.Linear(sum(in_dim), hid_dim, bias=bias)
         elif fuse_depth == depth:  # latest fusion
-            self.layers['fuse'] = torch.nn.Linear(hid_dim*2, out_dim, bias=False)
+            self.layers['fuse'] = torch.nn.Linear(hid_dim*2, out_dim, bias=bias)
         else:
-            self.layers['fuse'] = torch.nn.Linear(hid_dim*2, hid_dim, bias=False)
+            self.layers['fuse'] = torch.nn.Linear(hid_dim*2, hid_dim, bias=bias)
         
         for i in range(fuse_depth, depth):  # iterate fuse_depth, ..., depth-1
             if i != depth-1:
-                self.layers['decode_'+str(i)] = torch.nn.Linear(hid_dim, hid_dim, bias=False)
+                self.layers['decode_'+str(i)] = torch.nn.Linear(hid_dim, hid_dim, bias=bias)
             else:
-                self.layers['decode_'+str(i)] = torch.nn.Linear(hid_dim, out_dim, bias=False)
+                self.layers['decode_'+str(i)] = torch.nn.Linear(hid_dim, out_dim, bias=bias)
 
         self._init_weights(gamma)
 
@@ -172,7 +172,9 @@ class deep_fusion(nn.Module):
                     m.weight = torch.nn.Parameter(m.weight * gamma / torch.linalg.norm(m.weight))
                 else:
                     m.weight = torch.nn.Parameter(m.weight * gamma * 2**0.5 / torch.linalg.norm(m.weight))
-
+                if m.bias is not None:
+                    nn.init.normal_(m.bias, mean=0, std=gamma)
+                    
 
 class fission(nn.Module):
     """
