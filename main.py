@@ -87,6 +87,17 @@ def unpack_weights(parameters, args, w_dim, in_dim):
     return W_tot, in_hid
 
 
+def loss_func(args, y, y_hat):
+    if args.loss == "mse":
+        return 0.5*nn.MSELoss()(y, y_hat)
+    elif args.loss == "exponential":
+        return torch.mean(torch.exp(-y * y_hat))
+    elif args.loss == "logistic":
+        return torch.mean(torch.log(1+torch.exp(-y * y_hat)))
+    else:
+        raise NotImplementedError
+
+
 def train(data, args):
     if args.mode == "late_fusion" or args.mode == "deep_fusion":
         x1_tensor, x2_tensor, y_tensor, in_dim, out_dim = prep_data(args, data, device)
@@ -107,7 +118,7 @@ def train(data, args):
             predictions= network(x1_tensor, x2_tensor)
         else:
             predictions = network(x_tensor)
-        loss = 0.5*nn.MSELoss()(predictions, y_tensor)
+        loss = loss_func(args, y_tensor, predictions)
         loss.backward()
         optimizer.step()
         losses[i] = loss.item()

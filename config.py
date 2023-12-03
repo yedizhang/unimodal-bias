@@ -3,6 +3,7 @@ import argparse
 def config():
     parser = argparse.ArgumentParser()
     # training
+    parser.add_argument("--loss", type=str, default='mse', choices={'mse', 'exponential', 'logistic'}, help='loss function')
     parser.add_argument("--epoch", type=int, default=1000, help='number of epochs')
     parser.add_argument("--lr", type=float, default=0.04, help='learning rate')
     parser.add_argument("--reg", type=float, default=0, help='regularization, i.e. weight_decay')
