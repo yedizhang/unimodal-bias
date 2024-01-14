@@ -4,26 +4,12 @@ import torch.nn.functional as F
 
 
 class shallow_net(nn.Module):
-    """
-    A Linear Neural Net with no hidden layer
-    """
     def __init__(self, in_dim, out_dim, gamma=1e-12):
-        """
-        Args:
-            int in_dim: Input dimension
-            int hid_dim: Hidden dimension
-        """
         super().__init__()
         self.in_out = nn.Linear(in_dim, out_dim, bias=False)
         self._init_weights(gamma)
 
     def forward(self, x):
-        """
-        Args:
-            torch.Tensor x: Input tensor
-        Returns:
-            torch.Tensor out: Output/Prediction
-        """
         out = self.in_out(x)
         return out
 
@@ -35,15 +21,9 @@ class shallow_net(nn.Module):
 
 class early_fusion(nn.Module):
     """
-    A Linear Neural Net with one hidden layer
+    two-layer neural network
     """
     def __init__(self, in_dim, hid_dim, out_dim, activation, bias, gamma=1e-12):
-        """
-        Args:
-            int in_dim: Input dimension
-            int out_dim: Ouput dimension
-            int hid_dim: Hidden dimension
-        """
         super().__init__()
         self.in_hid = nn.Linear(in_dim, hid_dim, bias=bias)
         self.hid_out = nn.Linear(hid_dim, out_dim, bias=bias)
@@ -51,12 +31,6 @@ class early_fusion(nn.Module):
         self._init_weights(gamma)
 
     def forward(self, x):
-        """
-        Args:
-            torch.Tensor x: Input tensor
-        Returns:
-            torch.Tensor out: Output/Prediction
-        """
         hid = self.in_hid(x)
         if self.activation == 'relu':
             hid = F.relu(hid)
@@ -73,7 +47,7 @@ class early_fusion(nn.Module):
 
 class late_fusion(nn.Module):
     """
-    A Linear Neural Net with one hidden layer
+    two-layer late-fusion neural network
     """
     def __init__(self, in_dim, hid_dim, out_dim, activation, bias, gamma=1e-12):
         """
@@ -115,9 +89,6 @@ class late_fusion(nn.Module):
 
 
 class deep_fusion(nn.Module):
-    """
-    A Linear Neural Net with multiple hidden layers
-    """
     def __init__(self, in_dim, hid_dim, out_dim, depth, fuse_depth, activation, bias, gamma):
         super(deep_fusion, self).__init__()
         self.depth = depth
@@ -177,9 +148,6 @@ class deep_fusion(nn.Module):
                     
 
 class fission(nn.Module):
-    """
-    A Linear Neural Net with one hidden layer
-    """
     def __init__(self, in_dim, hid_dim, out_dim, bias, gamma=1e-12):
         super().__init__()
         self.hid = hid_dim
