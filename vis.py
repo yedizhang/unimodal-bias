@@ -41,7 +41,7 @@ def prep_axs(args):
     if args.vis_feat:
         ims = []
         fig = plt.figure(figsize=(5*ax_num, 5))
-        fig.suptitle('{} {} net, XOR & Gaussian var={:.2f}'.format(args.mode, args.activation, args.var_lin))
+        fig.suptitle('{} net, XOR & Gaussian var={:.2f}'.format(args.mode, args.var_lin))
         ax1 = fig.add_subplot(1, ax_num, 1)
         ax1.set_ylim([-0.05, 1.05])
         ax1.set_xlim([0, args.epoch])
@@ -78,7 +78,7 @@ def fig_feat(args, W, t):
     Z = bivariate_normal(X, Y, 2, 1)
 
     plt.figure(figsize=(4.2, 3))
-    if args.activation == 'relu':
+    if args.relu == 0:
         plt.scatter(W[:, 0], W[:, 1], linewidths=0.25, s=10, c=W[:, 2], 
                         #   vmin=-1, vmax=1,
                         cmap='coolwarm', edgecolors='k')

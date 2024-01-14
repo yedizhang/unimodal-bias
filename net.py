@@ -23,17 +23,16 @@ class early_fusion(nn.Module):
     """
     two-layer neural network
     """
-    def __init__(self, in_dim, hid_dim, out_dim, activation, bias, gamma=1e-12):
+    def __init__(self, in_dim, hid_dim, out_dim, relu, bias, gamma=1e-12):
         super().__init__()
         self.in_hid = nn.Linear(in_dim, hid_dim, bias=bias)
         self.hid_out = nn.Linear(hid_dim, out_dim, bias=bias)
-        self.activation = activation
+        self.activation = nn.LeakyReLU(negative_slope=relu)
         self._init_weights(gamma)
 
     def forward(self, x):
         hid = self.in_hid(x)
-        if self.activation == 'relu':
-            hid = F.relu(hid)
+        hid = self.activation(hid)
         out = self.hid_out(hid)
         return out
     
@@ -49,7 +48,7 @@ class late_fusion(nn.Module):
     """
     two-layer late-fusion neural network
     """
-    def __init__(self, in_dim, hid_dim, out_dim, activation, bias, gamma=1e-12):
+    def __init__(self, in_dim, hid_dim, out_dim, relu, bias, gamma=1e-12):
         """
         Args:
             int in_dim: Input dimension
@@ -59,7 +58,7 @@ class late_fusion(nn.Module):
         super().__init__()
         self.inA_hid = nn.Linear(in_dim[0], hid_dim, bias=bias)
         self.inB_hid = nn.Linear(in_dim[1], hid_dim, bias=bias)
-        self.activation = activation
+        self.activation = nn.LeakyReLU(negative_slope=relu)
         self.hid_out = nn.Linear(hid_dim*2, out_dim, bias=bias)
 
         self._init_weights(gamma)
@@ -75,8 +74,7 @@ class late_fusion(nn.Module):
         hidA = self.inA_hid(x1)
         hidB = self.inB_hid(x2)
         hid_fuse = torch.cat((hidA, hidB), -1)
-        if self.activation == 'relu':
-            hid_fuse = F.relu(hid_fuse)
+        hid_fuse = self.activation(hid_fuse)
         out = self.hid_out(hid_fuse)
         return out
 
@@ -89,11 +87,11 @@ class late_fusion(nn.Module):
 
 
 class deep_fusion(nn.Module):
-    def __init__(self, in_dim, hid_dim, out_dim, depth, fuse_depth, activation, bias, gamma):
+    def __init__(self, in_dim, hid_dim, out_dim, depth, fuse_depth, relu, bias, gamma):
         super(deep_fusion, self).__init__()
         self.depth = depth
         self.fuse_depth = fuse_depth
-        self.activation = activation
+        self.activation = nn.LeakyReLU(negative_slope=relu)
         self.layers = nn.ModuleDict()
 
         for i in range(1, fuse_depth):  # iterate 1, ..., fuse_depth-1
@@ -123,13 +121,11 @@ class deep_fusion(nn.Module):
         for i in range(1, self.fuse_depth):
             x1 = self.layers['encodeA_'+str(i)](x1)
             x2 = self.layers['encodeB_'+str(i)](x2)
-            if self.activation == 'relu':
-                x1, x2 = F.relu(x1), F.relu(x2)
+            x1, x2 = self.activation(x1), self.activation(x2)
         x = torch.cat((x1, x2), -1)
         x = self.layers['fuse'](x)
         for i in range(self.fuse_depth, self.depth):
-            if self.activation == 'relu':
-                x = F.relu(x)
+            x = self.activation(x)
             x = self.layers['decode_'+str(i)](x)
         return x
 

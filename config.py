@@ -9,7 +9,7 @@ def config():
     parser.add_argument("--reg", type=float, default=0, help='regularization, i.e. weight_decay')
     parser.add_argument("--init", type=float, default=1e-12, help='weight initialization')
     parser.add_argument("--hid_width", type=int, default=1, help='number of hidden neurons')
-    parser.add_argument("--activation", type=str, default='linear', help='activation function')
+    parser.add_argument("--relu", type=float, default=1, help='negative slope, 1 for linear, 0 for relu')
     parser.add_argument("--bias", action="store_true", help='bias or unbiased linear layer')
 
     # param for data set

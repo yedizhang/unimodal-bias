@@ -68,9 +68,9 @@ def toy_sweep(args):
     for k, ratio in enumerate([3, 2, 1.5, 1]):
         for i, rho in enumerate(rho_exp):
             args.rho, args.ratio = rho, ratio
-            args.activation = 'linear'
+            args.relu = 1  # linear
             lag_lin[i], bias_lin[i] = sweep(args)
-            args.activation = 'relu'
+            args.relu = 0  # ReLU
             lag_relu[i], bias_relu[i] = sweep(args)
         lag_theo = (ratio**2 - 1) / (1 - rho_theo**2) + 1
         ax1.plot(rho_theo, lag_theo, c=colors[k], label="$\sigma_A / \sigma_B = {}$".format(ratio))

@@ -42,7 +42,7 @@ def time_half(args, arr, weak=False):
         half = np.max(arr) / 2
     else:
         half = (1 + args.rho / args.ratio) / 2
-        if args.activation == 'relu':
+        if args.relu == 0:
             half *= 2
     res = (arr - half) ** 2
     return np.argmin(res)

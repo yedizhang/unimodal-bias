@@ -21,13 +21,13 @@ def creat_network(args, in_dim, out_dim):
     if args.mode == "shallow":
         network = shallow_net(in_dim, out_dim, args.init)
     elif args.mode == "early_fusion":
-        network = early_fusion(in_dim, args.hid_width, out_dim, args.activation, args.bias, args.init)
+        network = early_fusion(in_dim, args.hid_width, out_dim, args.relu, args.bias, args.init)
     elif args.mode == "late_fusion":
-        network = late_fusion(in_dim, args.hid_width, out_dim, args.activation, args.bias, args.init)
+        network = late_fusion(in_dim, args.hid_width, out_dim, args.relu, args.bias, args.init)
     elif args.mode == "deep_fusion":
         # gamma = np.power(args.init, 1/(1+args.fuse_depth))
         # print("gamma =", gamma)   # init should scale with init1/init2 = exp(depth2/depth1)
-        network = deep_fusion(in_dim, args.hid_width, out_dim, args.depth, args.fuse_depth, args.activation, args.bias, args.init)
+        network = deep_fusion(in_dim, args.hid_width, out_dim, args.depth, args.fuse_depth, args.relu, args.bias, args.init)
     elif args.mode == "fission":
         network = fission(in_dim, args.hid_width, out_dim, args.bias, args.init)
     print(network)
