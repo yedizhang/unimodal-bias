@@ -105,10 +105,11 @@ def train(data, args):
         x_tensor, y_tensor, in_dim, out_dim = prep_data(args, data, device)
     network = creat_network(args, in_dim, out_dim)
     optimizer = optim.SGD(network.parameters(), lr=args.lr, weight_decay=args.reg)
-
-    losses = np.zeros(args.epoch)  # loss records
+    
     w_dim = in_dim if isinstance(in_dim, int) else sum(in_dim)
     weights = np.zeros((args.epoch, w_dim)) if args.plot_weight else None
+    results = {'Ls': np.zeros(args.epoch),
+               'W': weights}
     if args.vis_feat:
         fig, axs, ims = prep_axs(args)
     # Training loop
@@ -121,25 +122,22 @@ def train(data, args):
         loss = loss_func(args, y_tensor, predictions)
         loss.backward()
         optimizer.step()
-        losses[i] = loss.item()
+        results['Ls'][i] = loss.item()
         
         if args.plot_weight:
-            weights[i, :], feat = unpack_weights(network.parameters(), args, w_dim, in_dim)
-            if i % 1000 == 0:
-                print(i, losses[i])
-                fig_feat(args, feat, i)
+            results['W'][i, :], feat = unpack_weights(network.parameters(), args, w_dim, in_dim)
             if args.vis_feat and i % 10 == 0:
                 y_res = data.copy()
                 y_res['y'] = data['y'] - predictions.cpu().detach().numpy()
                 if args.vis_contour:
                     axs[1].cla()
                     axs[2].cla()
-                    ims.append(vis_relu(args, y_res, feat, losses[:i], axs))
+                    ims.append(vis_relu(args, y_res, feat, results['Ls'][:i], axs))
                     # plt.savefig('frame/{:04d}.jpg'.format(i), dpi=300)
                 else:
-                    ims.append(vis_relu(args, y_res, feat, losses[:i], axs))
-        if args.sweep != 'single' and losses[i] < 10e-5:
-            losses, weights = losses[:i], weights[:i]
+                    ims.append(vis_relu(args, y_res, feat, results['Ls'][:i], axs))
+        if args.sweep != 'single' and results['Ls'][i] < 10e-5:
+            results['Ls'], results['W'] = results['Ls'][:i], weights[:i]
             print("Converged at epoch ", i)
             break
 
@@ -154,8 +152,8 @@ def train(data, args):
         plt.show()
     else:
         if args.sweep == 'single' or args.sweep == 'depth_single':
-            plot_training(args, losses, weights)
-        return losses, weights
+            plot_training(args, results)
+        return results
 
 
 if __name__ == "__main__":

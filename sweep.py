@@ -47,7 +47,8 @@ def sweep(args):
     lag, bias = 0, 0
     for _ in range(repeat):
         data = gen_data(args)
-        losses, weights = train(data, args)
+        results = train(data, args)
+        losses, weights = results['Ls'], results['W']
         if losses[-1] < 1e-3:
             ta = time_half(args, weights[:, 1])
             tb = time_half(args, weights[:, 0], True)
@@ -187,9 +188,9 @@ def xor_sweep(args):
     dirs = []
     for var in vars:
         args.var_lin = var
-        x1, x2, y = gen_data(args)
-        dir = train(x1, x2, y, args)
-        dirs.append(dir)
+        data = gen_data(args)
+        results = train(data, args)
+        dirs.append(results['W'])
         print(var)
     plt.scatter(vars, np.array(dirs), c='k')
     plt.xlabel("Variance of linear modality")

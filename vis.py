@@ -104,9 +104,10 @@ def fig_feat(args, W, t):
     plt.show()
 
 
-def plot_training(args, losses, weights=None):
+def plot_training(args, results):
     plt.rcParams['axes.spines.right'] = False
     plt.rcParams['axes.spines.top'] = False
+    losses, weights = results['Ls'], results['W']
     if args.mode == "deep_fusion":
         plt.rc('axes', prop_cycle=(cycler('color', colors)))
         plt.plot(losses / losses[0], linewidth=2, label="$L_f={}$".format(args.fuse_depth))  # label=args.fuse_depth-1, str(args.hid_width)+" hidden neurons"
