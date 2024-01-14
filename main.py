@@ -129,15 +129,15 @@ def train(data, args):
                 print(i, losses[i])
                 fig_feat(args, feat, i)
             if args.vis_feat and i % 10 == 0:
-                data_res = data.copy()
-                data_res['y'] = data['y'] - predictions.cpu().detach().numpy()
+                y_res = data.copy()
+                y_res['y'] = data['y'] - predictions.cpu().detach().numpy()
                 if args.vis_contour:
                     axs[1].cla()
                     axs[2].cla()
-                    ims.append(vis_relu(args, data_res, feat, losses[:i], axs))
+                    ims.append(vis_relu(args, y_res, feat, losses[:i], axs))
                     # plt.savefig('frame/{:04d}.jpg'.format(i), dpi=300)
                 else:
-                    ims.append(vis_relu(args, data_res, feat, losses[:i], axs))
+                    ims.append(vis_relu(args, y_res, feat, losses[:i], axs))
         if args.sweep != 'single' and losses[i] < 10e-5:
             losses, weights = losses[:i], weights[:i]
             print("Converged at epoch ", i)
@@ -153,7 +153,7 @@ def train(data, args):
         ani.save('early_relu_+-1xor_100hid.mp4', dpi=300)
         plt.show()
     else:
-        if args.sweep == 'single' or 'depth_single':
+        if args.sweep == 'single' or args.sweep == 'depth_single':
             plot_training(args, losses, weights)
         return losses, weights
 
