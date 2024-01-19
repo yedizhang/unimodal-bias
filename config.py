@@ -18,6 +18,7 @@ def config():
     parser.add_argument("--rho", type=float, default=0, help='Pearson correlation coefficient in toy dataset')
     parser.add_argument("--ratio", type=float, default=2, help='sigma_A / sigma_B ratio in toy dataset')
     parser.add_argument("--var_lin", type=float, default=1, help='variance of the linear modality in XOR dataset')
+    parser.add_argument("--noise", type=float, default=0, help='std of noise in the output; 0 for noiseless')
     
     # param for network
     parser.add_argument("--mode", type=str, default='shallow', choices={'shallow', 'early_fusion', 'late_fusion', 'deep_fusion'}, help='model type')
@@ -28,6 +29,7 @@ def config():
 
     # param for logging settings
     parser.add_argument("--plot_weight", action="store_true", help="enable weights plot")
+    parser.add_argument("--plot_Eg", action="store_true", help="enable generalization error plot")
     parser.add_argument("--vis_feat", action="store_true", help="enable feature visualization")
     parser.add_argument("--vis_contour", action="store_true", help="enable contour visualization")
 

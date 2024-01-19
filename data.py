@@ -1,8 +1,9 @@
 import numpy as np
+from scipy.stats import invwishart
 import matplotlib
 import matplotlib.pyplot as plt
-plt.rc('font', family="Times New Roman")
-plt.rcParams['font.size'] = '16'
+plt.rc('font', family="Arial")
+plt.rcParams['font.size'] = '14'
 
 
 def prep_data(args, data, device):
@@ -35,18 +36,18 @@ def prep_data(args, data, device):
 def gen_data(args):
     if args.data == 'toy':
         # vis_toy_data(x1, x2, y)
-        return gen_toy_data(rho=args.rho, ratio=args.ratio, size=args.dataset_size)
+        return gen_toy_data(args.rho, args.ratio, args.dataset_size, args.noise)
     if args.data == 'multi':
-        return gen_multi_data(args.dataset_size)
+        return gen_multi_data(args.dataset_size, args.noise)
     elif args.data == 'xor':
-        return gen_xor_data(var_lin=args.var_lin, size=args.dataset_size)
+        return gen_xor_data(args.var_lin, args.dataset_size)
     elif args.data == 'fission':
         return gen_fission_data(args.dataset_size)
     else:
         raise NotImplementedError
 
 
-def gen_toy_data(rho, ratio, size, noise=False):
+def gen_toy_data(rho, ratio, size, noise):
     """
     x1: shape (size, 1)
     x2: shape (size, 1)
@@ -56,33 +57,33 @@ def gen_toy_data(rho, ratio, size, noise=False):
     cov = [[1, rho*ratio],
            [rho*ratio, ratio**2]]
     pts = np.random.multivariate_normal(mean, cov, size)
-    x1 = pts[:, [0]]
-    x2 = pts[:, [1]]
-    y = x1 + x2
-    if noise:
-        n = np.random.normal(loc=0.0, scale=0.1, size=size)
-        y = y + n
+    w = np.ones(2)
+    y = pts @ w
+    if noise != 0:
+        y = y + np.random.normal(loc=0, scale=noise, size=size)
     print(pts.mean(axis=0), '\n', np.cov(pts.T), '\n', np.corrcoef(pts.T)[0, 1])
-    return {"x1": x1,
-            "x2": x2,
-            "y": y}
+    return {"x1": pts[:, [0]],
+            "x2": pts[:, [1]],
+            "y": y[:, np.newaxis],
+            "cov": cov,
+            "w_gt": w}
 
 
-def gen_multi_data(size):
-    mean = [0, 0, 0, 0]
-    cov = [[1, 0, 0, 0],
-           [0, 1, 0, 0],
-           [0, 0, 4, 0],
-           [0, 0, 0, 4]]
+def gen_multi_data(size, noise, dim=30):
+    mean = np.zeros(dim)
+    Psi = np.eye(dim)
+    Psi[0:(dim//2)] = 2*Psi[0:(dim//2)]   # the mean of invwishart is Psi; we don't want cov=I when time ratio is trivially 1
+    cov = invwishart.rvs(df=dim+2, scale=Psi)
     pts = np.random.multivariate_normal(mean, cov, size)
-    x1 = pts[:, 0:2]
-    x2 = pts[:, 2:4]
-    w1 = [1, 3]
-    w2 = [2, 1]
-    y = x1 @ w1 + x2 @ w2
-    return {"x1": x1,
-            "x2": x2,
-            "y": y[:, np.newaxis]}
+    w = np.ones(dim)
+    y = pts @ w
+    if noise != 0:
+        y = y + np.random.normal(loc=0, scale=noise, size=size)
+    return {"x1": pts[:, 0:(dim//2)],
+            "x2": pts[:, (dim//2):dim],
+            "y": y[:, np.newaxis],
+            "cov": cov,
+            "w_gt": w}
 
 
 def gen_xor_data(var_lin, size):
@@ -93,16 +94,8 @@ def gen_xor_data(var_lin, size):
     x1_xor = np.array([-1, 1, 1, -1])[:, np.newaxis]
     x1 = np.repeat(x1, size//4, axis=0)
     x1_xor = np.repeat(x1_xor, size//4, axis=0)
-
-    # mean = [0, 0]
-    # cov = [[1, 0],
-    #        [0, 4]]
-    # x2 = np.random.multivariate_normal(mean, cov, 4)
-    # y = x1_xor + x2[:, 0] + x2[:, 1]
-
     x2 = np.random.normal(0, np.sqrt(var_lin), size)[:, np.newaxis]  # np.sqrt(np.sqrt(2)/2)
     y = x1_xor + x2
-
     return {"x1": x1,
             "x2": x2,
             "y": y}

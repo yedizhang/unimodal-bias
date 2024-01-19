@@ -109,6 +109,7 @@ def train(data, args):
     w_dim = in_dim if isinstance(in_dim, int) else sum(in_dim)
     weights = np.zeros((args.epoch, w_dim)) if args.plot_weight else None
     results = {'Ls': np.zeros(args.epoch),
+               'Eg': np.zeros(args.epoch),
                'W': weights}
     if args.vis_feat:
         fig, axs, ims = prep_axs(args)
@@ -126,6 +127,7 @@ def train(data, args):
         
         if args.plot_weight:
             results['W'][i, :], feat = unpack_weights(network.parameters(), args, w_dim, in_dim)
+            results['Eg'][i] = (results['W'][i, :] - data['w_gt']) @ data['cov'] @ (results['W'][i, :] - data['w_gt']) / 2
             if args.vis_feat and i % 10 == 0:
                 y_res = data.copy()
                 y_res['y'] = data['y'] - predictions.cpu().detach().numpy()
@@ -141,7 +143,6 @@ def train(data, args):
             print("Converged at epoch ", i)
             break
 
-    # count = count_angle(cart2sph(feat))
     # vis_relu_3d(feat)
 
     if args.vis_feat:
@@ -152,9 +153,9 @@ def train(data, args):
         plt.show()
     else:
         if args.sweep == 'single' or args.sweep == 'depth_single':
-            plot_training(args, results)
+            plot_training(args, data, results)
         return results
-
+ 
 
 if __name__ == "__main__":
     args = config().parse_args()

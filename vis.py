@@ -104,7 +104,7 @@ def fig_feat(args, W, t):
     plt.show()
 
 
-def plot_training(args, results):
+def plot_training(args, data, results):
     plt.rcParams['axes.spines.right'] = False
     plt.rcParams['axes.spines.top'] = False
     losses, weights = results['Ls'], results['W']
@@ -160,3 +160,15 @@ def plot_training(args, results):
     # plt.yticks([0, 1, 1.25], ['0', r'$W_{A}^{tot}(\infty)$', r'$W_{A}^{tot}(t_{uni})$'])
 
     plt.tight_layout(pad=0.5)
+
+    if args.plot_Eg:
+        plt.figure(figsize=(4, 3))
+        plt.plot(results['Ls'], linewidth=2, c='k', label="Loss")
+        plt.plot(results['Eg'], linewidth=2, c='r', label="$E_g$")
+        plt.title('{} training samples'.format(args.dataset_size))
+        plt.xlabel("Epoch")
+        plt.xlim((0, args.epoch))
+        plt.legend()
+        plt.tight_layout(pad=0.5)
+        # plt.savefig('img/early_Eg_{}train_noise.pdf'.format(args.dataset_size))
+        # plt.savefig('img/Eg_{}train.jpg'.format(args.dataset_size), dpi=600)
