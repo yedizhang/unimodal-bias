@@ -1,4 +1,5 @@
 import numpy as np
+from numpy.linalg import norm
 from scipy.integrate import quad
 import matplotlib
 import matplotlib.pyplot as plt
@@ -12,12 +13,12 @@ plt.rcParams['font.size'] = '12'
 colors = [plt.get_cmap('Set1')(i) for i in range(9)]
 
 
-def integrand(u, wa, wb, L, Lf, init):
+def integrand(u, wa, wb, L, Lf, u0):
     k = wb/wa
     if Lf == 2:
-        ub = np.exp(k*np.log(u) + (1-k)*np.log(init))
+        ub = np.exp(k*np.log(u) + (1-k)*np.log(u0))
     else:
-        ub = (k*u**(2-Lf) + (1-k)*init**(2-Lf)) ** (1/(2-Lf))
+        ub = (k*u**(2-Lf) + (1-k)*u0**(2-Lf)) ** (1/(2-Lf))
     denominator = wa * u**(Lf-1) * (u**2 + ub**2) ** ((L-Lf)/2)
     return 1/denominator
 
@@ -38,7 +39,7 @@ def lag_depth(args):
             lag = ln_ub0 * wa**(Lf/L-1) / (1-args.rho**2)
         else:
             ub0 = args.init * (1-wb/wa) ** (1/(2-Lf))
-            lag = ub0**(2-Lf) * args.ratio**(Lf/L-1) / ((Lf-2) * (1-args.rho**2))
+            lag = ub0**(2-Lf) * (1+args.rho/args.ratio)**(Lf/L-1) / ((Lf-2) * (1-args.rho**2))
         return 1 + lag/I[0]
 
 
@@ -96,7 +97,21 @@ def toy_sweep(args):
     plt.show()
 
 
-def depth_sweep(args):
+def depth_single(args):
+    assert args.mode == 'deep_fusion', "Cannot do deep_sweep for {} network".format(args.data)
+    data = gen_data(args)
+    plt.figure(figsize=(4, 3))
+    for i in range(args.depth, 0, -1):
+        args.fuse_depth = i
+        train(data, args)
+    plt.ylabel("Loss")
+    plt.legend()
+    plt.tight_layout(pad=0.5)
+    plt.savefig('depthfuse{:d}.pdf'.format(args.depth))
+    plt.show()
+
+
+def rho_sweep(args):
     plt.figure(figsize=(4, 3))
     rho_theo = np.linspace(-0.92, 0.92, 100)
     rho_exp = np.linspace(-0.9, 0.9, 9)
@@ -118,21 +133,7 @@ def depth_sweep(args):
     plt.tight_layout(pad=0.5)
     plt.savefig("sweep/depth{}_sweep_ratio{}_{}hid_{}repeat.pdf".format(args.depth, args.ratio, args.hid_width, args.repeat))
     plt.show()
-
-
-def depth_single(args):
-    assert args.mode == 'deep_fusion', "Cannot do deep_sweep for {} network".format(args.data)
-    data = gen_data(args)
-    plt.figure(figsize=(4, 3))
-    for i in range(args.depth, 0, -1):
-        args.fuse_depth = i
-        train(data, args)
-    plt.ylabel("Loss")
-    plt.legend()
-    plt.tight_layout(pad=0.5)
-    plt.savefig('depthfuse{:d}.pdf'.format(args.depth))
-    plt.show()
-
+    
 
 def ratio_sweep(args):
     ratio_theo, ratio_exp = np.linspace(1, 3, 100), np.linspace(1.2, 2.8, 5)

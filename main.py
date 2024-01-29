@@ -166,8 +166,8 @@ if __name__ == "__main__":
         depth_single(args)
     elif args.sweep == 'toy_sweep':
         toy_sweep(args)
-    elif args.sweep == 'depth_sweep':
-        depth_sweep(args)
+    elif args.sweep == 'rho_sweep':
+        rho_sweep(args)
     elif args.sweep == 'ratio_sweep':
         ratio_sweep(args)
     elif args.sweep == 'init_sweep':
