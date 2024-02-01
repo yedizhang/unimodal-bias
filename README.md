@@ -24,10 +24,10 @@ python main.py --mode late_fusion --plot_weight
 Underparameterized and Overparameterized two-layer early/late fusion linear networks.
 
 ```bash
-python main.py --mode early_fusion --data multi --plot_weight --plot_Eg --in_dim 100 --dataset_size 70 --noise 0.5
-python main.py --mode early_fusion --data multi --plot_weight --plot_Eg --in_dim 100 --dataset_size 700 --noise 0.5
-python main.py --mode late_fusion --data multi --plot_weight --plot_Eg --in_dim 100 --dataset_size 70 --noise 0.5
-python main.py --mode late_fusion --data multi --plot_weight --plot_Eg --in_dim 100 --dataset_size 700 --noise 0.5
+python main.py --mode early_fusion --data multi --plot_weight --plot_Eg --in_dim 100 --dataset_size 70 --epoch 1200 --noise 0.5
+python main.py --mode early_fusion --data multi --plot_weight --plot_Eg --in_dim 100 --dataset_size 700 --epoch 1200 --noise 0.5
+python main.py --mode late_fusion --data multi --plot_weight --plot_Eg --in_dim 100 --dataset_size 70 --epoch 1200 --noise 0.5
+python main.py --mode late_fusion --data multi --plot_weight --plot_Eg --in_dim 100 --dataset_size 700 --epoch 1200 --noise 0.5
 ```
 
 Sweep experiments.
