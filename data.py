@@ -38,7 +38,7 @@ def gen_data(args):
         # vis_toy_data(x1, x2, y)
         return gen_toy_data(args.rho, args.ratio, args.dataset_size, args.noise)
     if args.data == 'multi':
-        return gen_multi_data(args.dataset_size, args.noise)
+        return gen_multi_data(args.dataset_size, args.noise, args.in_dim, args.sweep)
     elif args.data == 'xor':
         return gen_xor_data(args.var_lin, args.dataset_size)
     elif args.data == 'fission':
@@ -69,13 +69,21 @@ def gen_toy_data(rho, ratio, size, noise):
             "w_gt": w}
 
 
-def gen_multi_data(size, noise, dim=30):
+def gen_multi_data(size, noise, dim, sweep):
     mean = np.zeros(dim)
     Psi = np.eye(dim)
-    Psi[0:(dim//2)] = 2*Psi[0:(dim//2)]   # the mean of invwishart is Psi; we don't want cov=I when time ratio is trivially 1
-    cov = invwishart.rvs(df=dim+2, scale=Psi)
+    if sweep == 'single':
+        cov = Psi
+        cov[0:(dim//2)] = 3 * Psi[0:(dim//2)]
+        w = 0.1 * np.ones(dim)
+    elif sweep == 'rand_sweep':
+        rescale = 2
+        Psi[0:(dim//2)] = rescale * Psi[0:(dim//2)]   # the mean of invwishart is Psi; we don't want cov=I when time ratio is trivially 1
+        cov = invwishart.rvs(df=dim+2, scale=Psi)
+        w = np.random.uniform(-1,1,dim)
+    else:
+        raise NotImplementedError
     pts = np.random.multivariate_normal(mean, cov, size)
-    w = np.ones(dim)
     y = pts @ w
     if noise != 0:
         y = y + np.random.normal(loc=0, scale=noise, size=size)

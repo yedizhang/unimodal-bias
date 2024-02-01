@@ -18,6 +18,7 @@ def config():
     parser.add_argument("--rho", type=float, default=0, help='Pearson correlation coefficient in toy dataset')
     parser.add_argument("--ratio", type=float, default=2, help='sigma_A / sigma_B ratio in toy dataset')
     parser.add_argument("--var_lin", type=float, default=1, help='variance of the linear modality in XOR dataset')
+    parser.add_argument("--in_dim", type=int, default=20, help='number of input dimensions for multi dataset')
     parser.add_argument("--noise", type=float, default=0, help='std of noise in the output; 0 for noiseless')
     
     # param for network
