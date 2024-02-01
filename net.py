@@ -134,11 +134,10 @@ class deep_fusion(nn.Module):
         for m in self.modules():
             if isinstance(m, nn.Linear):
                 l += 1
-                nn.init.normal_(m.weight, mean=0, std=gamma)
                 if l <= 2*(self.fuse_depth-1):
-                    m.weight = torch.nn.Parameter(m.weight * gamma / torch.linalg.norm(m.weight))
+                    nn.init.normal_(m.weight, mean=0, std=gamma/(torch.numel(m.weight)**0.5))
                 else:
-                    m.weight = torch.nn.Parameter(m.weight * gamma * 2**0.5 / torch.linalg.norm(m.weight))
+                    nn.init.normal_(m.weight, mean=0, std=2**0.5*gamma/(torch.numel(m.weight)**0.5))
                 if m.bias is not None:
                     nn.init.normal_(m.bias, mean=0, std=gamma)
                     
