@@ -1,4 +1,5 @@
 import numpy as np
+from numpy.linalg import norm
 import matplotlib
 import matplotlib.pyplot as plt
 import matplotlib.animation as animation
@@ -113,26 +114,31 @@ def plot_training(args, data, results):
         plt.plot(losses / losses[0], linewidth=2, label="$L_f={}$".format(args.fuse_depth))  # label=args.fuse_depth-1, str(args.hid_width)+" hidden neurons"
     else:
         plt.figure(figsize=(4, 3))
-        plt.plot(losses / losses[0], linewidth=2, c='k', label="Loss")
         if weights is not None:
-            plt.plot(weights[:, -1]/weights[-1, -1], linewidth=2, c='b', label=r"$W_{A}^{tot}$")  # \frac{W_{A}^{tot}(t)}{W_{A}^{tot}(\infty)}
-            plt.plot(weights[:, 0]/weights[-1, 0], linewidth=2, c='fuchsia', label=r"$W_{B}^{tot}$")  # \frac{W_{B}^{tot}(t)}{W_{B}^{tot}(\infty)}
-            # plt.plot(np.arctan(weights[:, 0]/weights[:, 1]), color='b', alpha=0.7, label="angle")
-            # plt.plot((weights[:, 0]**2+weights[:, 1]**2)/2, color='c', alpha=0.7, label="$|W_1|^2$")
-            # if args.mode == "shallow":
-            #     t = np.arange(args.epoch)
-            #     tau = 0.5 / args.lr
-            #     w1 = - np.exp(-2*t/tau) + 1
-            #     w2 = - np.exp(-4*t/tau) + 1
-            # if args.mode == "late_fusion":
-            #     t = np.arange(args.epoch)
-            #     tau = 0.5 / args.lr
-            #     c = 1 / args.init ** 2
-            #     w1 = 1 / (c * np.exp(-2*t/tau) + 1)
-            #     w2 = 1 / (c * np.exp(-8*t/tau) + 1)
-            # plt.plot(w1, 'g--')
-            # plt.plot(w2, 'm--')
-            # plt.legend(loc='center right')
+            if args.data == 'multi':
+                plt.plot(losses, linewidth=2, c='k', label="Loss")
+                plt.plot(norm(weights[:, (args.in_dim//2):],axis=-1), linewidth=2, c='b', label=r"$||W_{A}^{tot}||$")
+                plt.plot(norm(weights[:, 0:(args.in_dim//2)],axis=-1), linewidth=2, c='fuchsia', label=r"$||W_{B}^{tot}||$")
+            else:
+                plt.plot(losses / losses[0], linewidth=2, c='k', label="Loss")
+                plt.plot(weights[:, -1]/weights[-1, -1], linewidth=2, c='b', label=r"$W_{A}^{tot}$")  # \frac{W_{A}^{tot}(t)}{W_{A}^{tot}(\infty)}
+                plt.plot(weights[:, 0]/weights[-1, 0], linewidth=2, c='fuchsia', label=r"$W_{B}^{tot}$")  # \frac{W_{B}^{tot}(t)}{W_{B}^{tot}(\infty)}
+                # plt.plot(np.arctan(weights[:, 0]/weights[:, 1]), color='b', alpha=0.7, label="angle")
+                # plt.plot((weights[:, 0]**2+weights[:, 1]**2)/2, color='c', alpha=0.7, label="$|W_1|^2$")
+                # if args.mode == "shallow":
+                #     t = np.arange(args.epoch)
+                #     tau = 0.5 / args.lr
+                #     w1 = - np.exp(-2*t/tau) + 1
+                #     w2 = - np.exp(-4*t/tau) + 1
+                # if args.mode == "late_fusion":
+                #     t = np.arange(args.epoch)
+                #     tau = 0.5 / args.lr
+                #     c = 1 / args.init ** 2
+                #     w1 = 1 / (c * np.exp(-2*t/tau) + 1)
+                #     w2 = 1 / (c * np.exp(-8*t/tau) + 1)
+                # plt.plot(w1, 'g--')
+                # plt.plot(w2, 'm--')
+                # plt.legend(loc='center right')
     plt.title(args.mode)
     plt.xlabel("Epoch")
     plt.ylabel("Loss")
