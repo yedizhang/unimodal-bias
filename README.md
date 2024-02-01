@@ -21,6 +21,15 @@ python main.py --mode early_fusion --plot_weight
 python main.py --mode late_fusion --plot_weight
 ```
 
+Underparameterized and Overparameterized two-layer early/late fusion linear networks.
+
+```bash
+python main.py --mode early_fusion --data multi --plot_weight --plot_Eg --in_dim 100 --dataset_size 70 --noise 0.5
+python main.py --mode early_fusion --data multi --plot_weight --plot_Eg --in_dim 100 --dataset_size 700 --noise 0.5
+python main.py --mode late_fusion --data multi --plot_weight --plot_Eg --in_dim 100 --dataset_size 70 --noise 0.5
+python main.py --mode late_fusion --data multi --plot_weight --plot_Eg --in_dim 100 --dataset_size 700 --noise 0.5
+```
+
 Sweep experiments.
 
 Two-layer late fusion linear network sweep.
@@ -32,8 +41,8 @@ python main.py --mode late_fusion --plot_weight --data multi --lr 0.005 --epoch 
 Deep multimodal linear network sweep.
 ```bash
 python main.py --mode deep_fusion --init 0.1 --plot_weight --sweep depth_single --epoch 7000
-python main.py --mode deep_fusion --init 0.07 --plot_weight --epoch 100000 --sweep rho_sweep --repeat 5
-python main.py --mode deep_fusion --init 0.07 --plot_weight --epoch 100000 --sweep ratio_sweep --repeat 5
+python main.py --mode deep_fusion --init 0.1 --plot_weight --epoch 100000 --sweep rho_sweep --repeat 5
+python main.py --mode deep_fusion --init 0.1 --plot_weight --epoch 100000 --sweep ratio_sweep --repeat 5
 python main.py --mode deep_fusion --plot_weight --epoch 100000 --sweep init_sweep --repeat 5
 ```
 
