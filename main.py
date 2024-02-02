@@ -6,6 +6,7 @@ import matplotlib.pyplot as plt
 plt.rc('font', family="Arial")
 plt.rcParams['font.size'] = '14'
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+np.random.seed(202310)
 
 from net import shallow_net, early_fusion, late_fusion, deep_fusion, fission
 from config import config
@@ -154,6 +155,7 @@ def train(data, args):
     else:
         if args.sweep == 'single' or args.sweep == 'depth_single':
             plot_training(args, data, results)
+            plt.show()
         return results
  
 
