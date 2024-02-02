@@ -171,10 +171,13 @@ def plot_training(args, data, results):
         plt.figure(figsize=(4, 3))
         plt.plot(results['Ls'], linewidth=2, c='k', label="Loss")
         plt.plot(results['Eg'], linewidth=2, c='r', label="$E_g$")
+        # plt.hlines(0.276, 0, args.epoch, 'grey', linestyles='dotted', linewidth=2)  # Eg_uni when dataset_size = 700
+        # plt.yticks([0, 0.276, 1], [0, r'$E_g^{uni}$', 1])
+        # plt.hlines(0.467, 0, args.epoch, 'grey', linestyles='dotted', linewidth=2)  # Eg_uni when dataset_size = 70
+        # plt.yticks([0, 0.467, 1], [0, r'$E_g^{uni}$', 1])
+        # plt.xticks([0, 173, 622, 1200], [0, '$t_1$', '$t_2$', 1200])  # late fusion early stopping times
         plt.title('{} training samples'.format(args.dataset_size))
         plt.xlabel("Epoch")
         plt.xlim((0, args.epoch))
-        plt.legend()
+        plt.legend(loc=1)
         plt.tight_layout(pad=0.5)
-        # plt.savefig('img/early_Eg_{}train_noise.pdf'.format(args.dataset_size))
-        # plt.savefig('img/Eg_{}train.jpg'.format(args.dataset_size), dpi=600)
