@@ -36,11 +36,24 @@ def lag_depth(args):
         I = quad(integrand, ua0, 1, args=(wa, wb, L, Lf, ua0))
         if Lf == 2:
             ln_ub0 = np.log(1/args.init) * (1-wb/wa)
-            lag = ln_ub0 * wa**(Lf/L-1) / (1-args.rho**2)
+            lag = ln_ub0 * (1+args.rho/args.ratio)**(Lf/L-1) / (1-args.rho**2)
         else:
             ub0 = args.init * (1-wb/wa) ** (1/(2-Lf))
             lag = ub0**(2-Lf) * (1+args.rho/args.ratio)**(Lf/L-1) / ((Lf-2) * (1-args.rho**2))
         return 1 + lag/I[0]
+
+
+def lag_twolayer(args, data):
+    xa, xb, y = data['x1'], data['x2'], data['y']
+    cov = data['cov']
+    dim_a = xa.shape[1]
+    y_xa = np.mean(y*xa, axis=0)
+    y_xb = np.mean(y*xb, axis=0)
+    cov_a = cov[0:dim_a, 0:dim_a]
+    cov_ab = cov[0:dim_a, dim_a:]
+    wa_uni = y_xa @ np.linalg.inv(cov_a)
+    lag = (norm(y_xa) - norm(y_xb)) / norm(y_xb - wa_uni @ cov_ab)
+    return 1 + lag, wa_uni
 
 
 def sweep(args):
@@ -107,7 +120,7 @@ def depth_single(args):
     plt.ylabel("Loss")
     plt.legend()
     plt.tight_layout(pad=0.5)
-    plt.savefig('depthfuse{:d}.pdf'.format(args.depth))
+    plt.savefig('depth{:d}_single.pdf'.format(args.depth))
     plt.show()
 
 
@@ -179,6 +192,39 @@ def init_sweep(args):
     plt.legend()
     plt.tight_layout(pad=0.5)
     plt.savefig("init_sweep.pdf")
+    plt.show()
+
+
+def rand_sweep(args):
+    lag = np.zeros((2, args.repeat))
+    i = 0
+    while i < args.repeat:
+        data = gen_data(args)
+        lag_theo, wa_uni = lag_twolayer(args, data)  # theoretical prediction
+        if lag_theo > 20 or lag_theo < 1:
+            continue
+        else:
+            lag[0, i] = lag_theo
+            results = train(data, args)
+            losses, weights = results['Ls'], results['W']
+            if losses[-1] < 1e-3:
+                Wa_tot = norm(weights[:, 0:(args.in_dim//2)], axis=1)
+                Wb_tot = norm(weights[:, (args.in_dim//2):], axis=1)
+                ta = time_half(args, Wa_tot, False, norm(wa_uni))
+                tb = time_half(args, Wb_tot, True)
+                lag[1, i] = tb / ta  # simulated result
+                i += 1
+    plt.figure(figsize=(3, 3))
+    plt.scatter(lag[0,:], lag[1,:], c='k', s=10)
+    line = np.linspace(0, np.max(lag), 100)
+    plt.plot(line, line, c='k')
+    plt.xticks([0, 10, 20])
+    plt.yticks([0, 10, 20])
+    plt.axis('equal')
+    plt.xlabel("Theory")
+    plt.ylabel("Experiment")
+    plt.title("Time ratio")
+    plt.tight_layout(pad=0.5)
     plt.show()
 
 
