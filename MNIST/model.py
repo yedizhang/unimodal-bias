@@ -90,3 +90,52 @@ class FCN(nn.Module):
             if isinstance(m, nn.Linear):
                 torch.nn.init.xavier_uniform_(m.weight, gain=0.5)
                 torch.nn.init.normal_(m.bias, std=0.1)
+
+
+class CNN(nn.Module):
+    def __init__(self):
+        super(CNN, self).__init__()
+        self.layers = nn.ModuleDict()
+        self.layers['conv1_A'] = nn.Conv2d(1, 32, 3, 1)
+        self.layers['conv2_A'] = nn.Conv2d(32, 64, 3, 1)
+        self.layers['conv3_A'] = nn.Conv2d(64, 64, 3, 1)
+
+        self.layers['conv1_B'] = nn.Conv2d(1, 32, 3, 1)
+        self.layers['conv2_B'] = nn.Conv2d(32, 64, 3, 1)
+        self.layers['conv3_B'] = nn.Conv2d(64, 64, 3, 1)
+
+        self.layers['fc1'] = nn.Linear(3200, 500)
+        self.layers['fc2'] = nn.Linear(500, 10)
+
+
+    def prefusion(self, x, M):
+        x = self.layers['conv1_'+str(M)](x)
+        x = F.relu(x)
+        x = self.layers['conv2_'+str(M)](x)
+        x = F.relu(x)
+        x = F.max_pool2d(x, 2)
+        x = self.layers['conv3_'+str(M)](x)
+        x = F.relu(x)
+        x = F.max_pool2d(x, 2)
+        x = torch.flatten(x, 1)
+        return x
+
+
+    def forward(self, x, unimodal=None):
+        if unimodal is None:
+            xA, xB = uni2multi(x)
+        elif unimodal == 'A':
+            xA = x
+            xB = torch.zeros(x.shape).to(device)
+        elif unimodal == 'B':
+            xA = torch.zeros(x.shape).to(device)
+            xB = x
+
+        xA = self.prefusion(xA, 'A')
+        xB = self.prefusion(xB, 'A')
+        fuse = torch.cat((xA, xB), -1)
+        fuse = self.layers['fc1'](fuse)
+        fuse = F.relu(fuse)
+        fuse = self.layers['fc2'](fuse)
+
+        return F.log_softmax(fuse, dim=1)

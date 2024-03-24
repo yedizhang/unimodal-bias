@@ -7,7 +7,7 @@ import torch.nn.functional as F
 import torch.optim as optim
 from torchvision import datasets, transforms
 from torch.optim.lr_scheduler import StepLR
-from fcn import FCN
+from model import CNN, FCN
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 
