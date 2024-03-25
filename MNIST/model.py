@@ -32,8 +32,23 @@ def uni2multi(x, feed_A=0.8, feed_AB=0.2):
     return xA, xB
 
 
+def set_data(x, unimodal=None, flatten=False):
+    if unimodal is None:
+        xA, xB = uni2multi(x)
+    elif unimodal == 'A':  # Feed blank img if unimodal
+        xA = x
+        xB = torch.zeros(x.shape).to(device)
+    elif unimodal == 'B':
+        xA = torch.zeros(x.shape).to(device)
+        xB = x
+    if flatten:
+        return torch.flatten(xA, 1), torch.flatten(xB, 1)
+    else:
+        return xA, xB
+
+
 class FCN(nn.Module):
-    def __init__(self, depth=4, fuse_depth=1, hid_dim=500):
+    def __init__(self, depth, fuse_depth, hid_dim=500):
         super(FCN, self).__init__()
         self.depth = depth
         self.fuse_depth = fuse_depth
@@ -62,15 +77,7 @@ class FCN(nn.Module):
 
 
     def forward(self, x, unimodal=None):
-        if unimodal is None:
-            xA, xB = uni2multi(x)
-        elif unimodal == 'A':  # If unimodal, shouldn't add noise
-            xA = x
-            xB = torch.zeros(x.shape).to(torch.device("cuda"))
-        elif unimodal == 'B':
-            xA = torch.zeros(x.shape).to(torch.device("cuda"))
-            xB = x
-        xA, xB = torch.flatten(xA, 1), torch.flatten(xB, 1)
+        xA, xB = set_data(x, unimodal, True)
 
         for i in range(1, self.fuse_depth):
             xA = self.layers['encodeA_'+str(i)](xA)
@@ -93,49 +100,45 @@ class FCN(nn.Module):
 
 
 class CNN(nn.Module):
-    def __init__(self):
+    def __init__(self, depth, fuse_depth, hid=32):
         super(CNN, self).__init__()
+        self.depth = depth
+        self.fuse_depth = fuse_depth
         self.layers = nn.ModuleDict()
-        self.layers['conv1_A'] = nn.Conv2d(1, 32, 3, 1)
-        self.layers['conv2_A'] = nn.Conv2d(32, 64, 3, 1)
-        self.layers['conv3_A'] = nn.Conv2d(64, 64, 3, 1)
 
-        self.layers['conv1_B'] = nn.Conv2d(1, 32, 3, 1)
-        self.layers['conv2_B'] = nn.Conv2d(32, 64, 3, 1)
-        self.layers['conv3_B'] = nn.Conv2d(64, 64, 3, 1)
+        for i in range(1, fuse_depth):  # iterate 1, ..., fuse_depth-1
+            if i == 1:
+                self.layers['encodeA_'+str(i)] = nn.Conv2d(1, hid, 3, 1)
+                self.layers['encodeB_'+str(i)] = nn.Conv2d(1, hid, 3, 1)
+            else:
+                self.layers['encodeA_'+str(i)] = nn.Conv2d(hid, hid, 3, 1)
+                self.layers['encodeB_'+str(i)] = nn.Conv2d(hid, hid, 3, 1)
 
-        self.layers['fc1'] = nn.Linear(3200, 500)
-        self.layers['fc2'] = nn.Linear(500, 10)
+        if fuse_depth == 1:  # early fusion
+            self.layers['fuse'] = nn.Conv2d(2, hid, 3, 1)
+        else:
+            self.layers['fuse'] = nn.Conv2d(hid*2, hid, 3, 1)
 
+        for i in range(fuse_depth, depth):
+            self.layers['decode_'+str(i)] = nn.Conv2d(hid, hid, 3, 1)
 
-    def prefusion(self, x, M):
-        x = self.layers['conv1_'+str(M)](x)
-        x = F.relu(x)
-        x = self.layers['conv2_'+str(M)](x)
-        x = F.relu(x)
-        x = F.max_pool2d(x, 2)
-        x = self.layers['conv3_'+str(M)](x)
-        x = F.relu(x)
-        x = F.max_pool2d(x, 2)
-        x = torch.flatten(x, 1)
-        return x
+        self.layers['fc'] = nn.Linear(3200, 10)
 
 
     def forward(self, x, unimodal=None):
-        if unimodal is None:
-            xA, xB = uni2multi(x)
-        elif unimodal == 'A':
-            xA = x
-            xB = torch.zeros(x.shape).to(device)
-        elif unimodal == 'B':
-            xA = torch.zeros(x.shape).to(device)
-            xB = x
+        xA, xB = set_data(x, unimodal)
 
-        xA = self.prefusion(xA, 'A')
-        xB = self.prefusion(xB, 'A')
-        fuse = torch.cat((xA, xB), -1)
-        fuse = self.layers['fc1'](fuse)
-        fuse = F.relu(fuse)
-        fuse = self.layers['fc2'](fuse)
+        for i in range(1, self.fuse_depth):
+            xA = self.layers['encodeA_'+str(i)](xA)
+            xB = self.layers['encodeB_'+str(i)](xB)
+            xA, xB = F.relu(xA), F.relu(xB)
+        x = torch.cat((xA, xB), 1)  # concat along channel
+        x = F.relu(self.layers['fuse'](x))
+        for i in range(self.fuse_depth, self.depth):
+            x = self.layers['decode_'+str(i)](x)
+            x = F.relu(x)
+        x = F.max_pool2d(x, 2)
+        x = torch.flatten(x, 1)
+        x = self.layers['fc'](x)
 
-        return F.log_softmax(fuse, dim=1)
+        return F.log_softmax(x, dim=1)

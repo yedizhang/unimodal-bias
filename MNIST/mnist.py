@@ -1,3 +1,4 @@
+""" Adapted from https://github.com/pytorch/examples/blob/main/mnist/main.py """
 from __future__ import print_function
 import argparse
 import numpy as np
@@ -9,6 +10,24 @@ from torchvision import datasets, transforms
 from torch.optim.lr_scheduler import StepLR
 from model import CNN, FCN
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
+
+def config():
+    parser = argparse.ArgumentParser(description='PyTorch MNIST Example')
+    parser.add_argument('--model', type=str, default='FCN', help='FCN or CNN')
+    parser.add_argument('--dataset', type=str, default='mnist', help='MNIST or FashionMNIST')
+    parser.add_argument('--batch-size', type=int, default=1000, metavar='N', help='input batch size for training')
+    parser.add_argument('--test-batch-size', type=int, default=1000, metavar='N', help='input batch size for testing')
+    parser.add_argument('--epoch', type=int, default=100, metavar='N', help='number of epochs to train')
+    parser.add_argument('--lr', type=float, default=0.002, metavar='LR', help='learning rate')
+    parser.add_argument('--gamma', type=float, default=1.0, metavar='M', help='Learning rate step gamma=')
+    parser.add_argument('--seed', type=int, default=1, metavar='S', help='random seed')
+    parser.add_argument('--log-interval', type=int, default=30, metavar='N', help='how many batches to wait before logging training status')
+    parser.add_argument('--save-model', action='store_true', default=False, help='For Saving the current Model')
+    parser.add_argument("--depth", type=int, default=4, help='number of layers ')
+    parser.add_argument("--fuse_depth", type=int, default=2, help='fuse at which layer')
+    print(parser.parse_args(), '\n')
+    return parser
 
 
 def train(args, model, device, train_loader, optimizer, epoch):
@@ -51,13 +70,18 @@ def test_unit(model, device, test_loader, unimodal=None):
     test_loss /= len(test_loader.dataset)
     test_acc = correct / len(test_loader.dataset)
 
-    print('\nTest set {}: Average loss: {:.4f}, Accuracy: {}/{} ({:.0f}%)'.format(
+    print('Test set {}: Average loss: {:.4f}, Accuracy: {}/{} ({:.0f}%)'.format(
         unimodal, test_loss, correct, len(test_loader.dataset), 100. * test_acc))
     return test_acc
 
 
 def vis(args, Ls, Eg, Eg_A, Eg_B):
-    filename = "mnist_L{}_Lf{}_seed{}".format(args.depth, args.fuse_depth, args.seed)
+    if args.model == 'FCN':
+        L = args.depth
+    elif args.model == 'CNN':
+        L = args.depth + 1
+    filename = "{}_{}_L{}_Lf{}_lr{}_seed{}".format(args.model, args.dataset, L, args.fuse_depth, args.lr, args.seed)
+
     import pandas as pd
     df = pd.DataFrame({'Ls': Ls,
                        'Eg': Eg,
@@ -70,40 +94,16 @@ def vis(args, Ls, Eg, Eg_A, Eg_B):
     plt.rcParams['axes.spines.right'] = False
     plt.rcParams['axes.spines.top'] = False
     plt.figure(figsize=(4, 3))
-    plt.plot(Ls/Ls[0], c='k', linewidth=2, label="Loss")
-    plt.plot(Eg_A, c='b', linewidth=2, label="A acc")
-    plt.plot(Eg_B, c='fuchsia', linewidth=2, label="B acc")
-    plt.plot(Eg, 'k--', linewidth=2, label="A&B acc")
+    plt.plot(Ls/Ls[0], c='k', lw=1.5, label="Loss")
+    plt.plot(Eg_A, c='b', lw=1.5, label="A acc")
+    plt.plot(Eg_B, c='fuchsia', lw=1.5, label="B acc")
+    plt.plot(Eg, 'k--', lw=1.5, label="A&B acc")
     plt.xlabel("Epoch")
     plt.ylabel("Loss & Accuracy")
     plt.xlim((0, args.epoch-1))
     plt.legend()
     plt.tight_layout(pad=0.5)
     plt.savefig("{}.svg".format(filename))
-
-
-def config():
-    parser = argparse.ArgumentParser(description='PyTorch MNIST Example')
-    parser.add_argument('--batch-size', type=int, default=1000, metavar='N',
-                        help='input batch size for training (default: 1000)')
-    parser.add_argument('--test-batch-size', type=int, default=1000, metavar='N',
-                        help='input batch size for testing (default: 1000)')
-    parser.add_argument('--epoch', type=int, default=80, metavar='N',
-                        help='number of epochs to train (default: 80)')
-    parser.add_argument('--lr', type=float, default=0.04, metavar='LR',
-                        help='learning rate (default: 0.04)')
-    parser.add_argument('--gamma', type=float, default=1.0, metavar='M',
-                        help='Learning rate step gamma (default: 1.0)')
-    parser.add_argument('--seed', type=int, default=1, metavar='S',
-                        help='random seed (default: 1)')
-    parser.add_argument('--log-interval', type=int, default=30, metavar='N',
-                        help='how many batches to wait before logging training status')
-    parser.add_argument('--save-model', action='store_true', default=False,
-                        help='For Saving the current Model')
-    parser.add_argument("--depth", type=int, default=5, help='number of layers ')
-    parser.add_argument("--fuse_depth", type=int, default=2, help='fuse at which layer')
-    print(parser.parse_args(), '\n')
-    return parser
 
 
 def mnist():
@@ -121,15 +121,22 @@ def mnist():
         transforms.ToTensor(),
         transforms.Normalize((0.1307,), (0.3081,))
         ])
-    dataset1 = datasets.MNIST('./data', train=True, download=True, transform=transform)
-    dataset2 = datasets.MNIST('./data', train=False, transform=transform)
+    if args.dataset == 'mnist':
+        dataset1 = datasets.MNIST('./data', train=True, download=True, transform=transform)
+        dataset2 = datasets.MNIST('./data', train=False, transform=transform)
+    elif args.dataset == 'fmnist':
+        dataset1 = datasets.FashionMNIST('./data', train=True, download=True, transform=transform)
+        dataset2 = datasets.FashionMNIST('./data', train=False, transform=transform)
     train_loader = torch.utils.data.DataLoader(dataset1, **train_kwargs)
     test_loader = torch.utils.data.DataLoader(dataset2, **test_kwargs)
 
     Ls = np.zeros(args.epoch)
     Eg, Eg_A, Eg_B = np.copy(Ls), np.copy(Ls), np.copy(Ls)
 
-    model = FCN(depth=args.depth, fuse_depth=args.fuse_depth).to(device)
+    if args.model == 'FCN':
+        model = FCN(args.depth, args.fuse_depth).to(device)
+    elif args.model == 'CNN':
+        model = CNN(args.depth, args.fuse_depth).to(device)
     print(model)
 
     optimizer = optim.SGD(model.parameters(), lr=args.lr)
