@@ -50,12 +50,18 @@ python main.py --mode deep_fusion --plot_weight --epoch 100000 --sweep init_swee
 ## Citation
 
 ```
-@misc{yedi2023unimodal,
-      title={A Theory of Unimodal Bias in Multimodal Learning}, 
-      author={Yedi Zhang and Peter E. Latham and Andrew Saxe},
-      year={2023},
-      eprint={2312.00935},
-      archivePrefix={arXiv},
-      primaryClass={cs.LG}
+@InProceedings{yedi24unimodal,
+  title = 	 {Understanding Unimodal Bias in Multimodal Deep Linear Networks},
+  author =       {Zhang, Yedi and Latham, Peter E. and Saxe, Andrew M},
+  booktitle = 	 {Proceedings of the 41st International Conference on Machine Learning},
+  pages = 	 {59100--59125},
+  year = 	 {2024},
+  editor = 	 {Salakhutdinov, Ruslan and Kolter, Zico and Heller, Katherine and Weller, Adrian and Oliver, Nuria and Scarlett, Jonathan and Berkenkamp, Felix},
+  volume = 	 {235},
+  series = 	 {Proceedings of Machine Learning Research},
+  month = 	 {21--27 Jul},
+  publisher =    {PMLR},
+  pdf = 	 {https://raw.githubusercontent.com/mlresearch/v235/main/assets/zhang24aa/zhang24aa.pdf},
+  url = 	 {https://proceedings.mlr.press/v235/zhang24aa.html}
 }
 ```
