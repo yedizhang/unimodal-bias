@@ -25,14 +25,13 @@ def config():
     parser.add_argument("--mode", type=str, default='shallow', choices={'shallow', 'early_fusion', 'late_fusion', 'deep_fusion'}, help='model type')
     parser.add_argument("--depth", type=int, default=4, help='number of layers ')
     parser.add_argument("--fuse_depth", type=int, default=2, help='fuse at which layer')
-    parser.add_argument("--sweep", type=str, default='single', choices={'single', 'depth_single', 'toy_sweep', 'rho_sweep', 'init_sweep', 'ratio_sweep', 'rand_sweep', 'xor_sweep'}, help='sweep option')
+    parser.add_argument("--sweep", type=str, default='single', choices={'single', 'depth_single', 'toy_sweep', 'rho_sweep', 'init_sweep', 'ratio_sweep'}, help='sweep option')
     parser.add_argument("--repeat", type=int, default=1, help='number of repeats in sweep ')
 
     # param for logging settings
     parser.add_argument("--plot_weight", action="store_true", help="enable weights plot")
     parser.add_argument("--plot_Eg", action="store_true", help="enable generalization error plot")
     parser.add_argument("--vis_feat", action="store_true", help="enable feature visualization")
-    parser.add_argument("--vis_contour", action="store_true", help="enable contour visualization")
 
     print(parser.parse_args(), '\n')
     return parser

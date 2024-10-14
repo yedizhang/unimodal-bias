@@ -10,8 +10,6 @@ np.random.seed(202310)
 
 from net import shallow_net, early_fusion, late_fusion, deep_fusion, fission
 from config import config
-from util import *
-from numerical import *
 from data import *
 from vis import *
 from sweep import *
@@ -44,15 +42,6 @@ def unpack_weights(parameters, args, w_dim, in_dim):
     elif args.mode == "early_fusion":
         W_tot = (W[1] @ W[0]).squeeze()
         in_hid = W[0]
-        # W1 = W[0]
-        # W2 = W[1]
-        # W_gt = np.array([1,2])
-        # W_gt = W_gt / np.linalg.norm(W_gt)
-        # M = W1.T @ W1 + np.linalg.norm(W2) * np.eye(2)
-        # align = W_gt.T @ M @ W_gt / np.linalg.norm(M)
-        # print(np.linalg.eigvals(W1.T @ W1).real)
-        # print(np.linalg.eigvals(M).real)
-        # print(align)
     elif args.mode == "late_fusion":
         W_tot[:in_dim[0]] = W[-1][:, :hid] @ W[0]
         W_tot[in_dim[0]:] = W[-1][:, hid:] @ W[1]
@@ -119,35 +108,24 @@ def train(data, args):
         
         if args.plot_weight:
             results['W'][i, :], feat = unpack_weights(network.parameters(), args, w_dim, in_dim)
-            results['Eg'][i] = (results['W'][i, :] - data['w_gt']) @ data['cov'] @ (results['W'][i, :] - data['w_gt']) / 2
+            if args.plot_Eg:
+                results['Eg'][i] = (results['W'][i, :] - data['w_gt']) @ data['cov'] @ (results['W'][i, :] - data['w_gt']) / 2
             if args.vis_feat and i % 10 == 0:
                 y_res = data.copy()
                 y_res['y'] = data['y'] - predictions.cpu().detach().numpy()
-                if args.vis_contour:
-                    axs[1].cla()
-                    axs[2].cla()
-                    ims.append(vis_relu(args, y_res, feat, results['Ls'][:i], axs))
-                    # plt.savefig('frame/{:04d}.jpg'.format(i), dpi=300)
-                else:
-                    ims.append(vis_relu(args, y_res, feat, results['Ls'][:i], axs))
-        if args.sweep != 'single' and results['Ls'][i] < 10e-5:
+                ims.append(vis_relu(args, y_res, feat, results['Ls'][:i], axs))
+        if args.sweep not in ['single', 'depth_single'] and results['Ls'][i] < 10e-5:
             results['Ls'], results['W'] = results['Ls'][:i], weights[:i]
             print("Converged at epoch ", i)
             break
 
-    # vis_relu_3d(feat)
-
     if args.vis_feat:
         ani = animation.ArtistAnimation(fig, ims, interval=20, blit=False)
-        fig.colorbar(ims[1][0], orientation='vertical')
         plt.tight_layout()
-        ani.save('early_relu_+-1xor_100hid.mp4', dpi=300)
         plt.show()
-    else:
-        if args.sweep == 'single' or args.sweep == 'depth_single':
-            plot_training(args, data, results)
-            plt.show()
-        return results
+    if args.sweep in ['single', 'depth_single']:
+        plot_training(args, data, results)
+    return results
  
 
 if __name__ == "__main__":
@@ -165,7 +143,4 @@ if __name__ == "__main__":
         ratio_sweep(args)
     elif args.sweep == 'init_sweep':
         init_sweep(args)
-    elif args.sweep == 'rand_sweep':
-        rand_sweep(args)
-    elif args.sweep == 'xor_sweep':
-        xor_sweep(args)
+    plt.show()

@@ -35,7 +35,6 @@ Sweep experiments.
 Two-layer late fusion linear network sweep.
 ```bash
 python main.py --mode late_fusion --plot_weight --epoch 40000 --sweep toy_sweep --repeat 5
-python main.py --mode late_fusion --plot_weight --data multi --lr 0.005 --epoch 20000 --sweep rand_sweep --repeat 50
 ```
 
 Deep multimodal linear network sweep.

@@ -1,9 +1,4 @@
 import numpy as np
-from scipy.stats import invwishart
-import matplotlib
-import matplotlib.pyplot as plt
-plt.rc('font', family="Arial")
-plt.rcParams['font.size'] = '14'
 
 
 def prep_data(args, data, device):
@@ -71,19 +66,10 @@ def gen_toy_data(rho, ratio, size, noise):
 
 def gen_multi_data(size, noise, dim, sweep):
     mean = np.zeros(dim)
-    Psi = np.eye(dim)
-    if sweep == 'single':
-        cov = Psi
-        cov[0:(dim//2)] = 3 * Psi[0:(dim//2)]
-        w = 0.1 * np.ones(dim)
-    elif sweep == 'rand_sweep':
-        rescale = 2
-        Psi[0:(dim//2)] = rescale * Psi[0:(dim//2)]   # the mean of invwishart is Psi; we don't want cov=I when time ratio is trivially 1
-        cov = invwishart.rvs(df=dim+2, scale=Psi)
-        w = np.random.uniform(-1,1,dim)
-    else:
-        raise NotImplementedError
+    cov = np.eye(dim)
+    cov[0:(dim//2)] = 3 * np.eye(dim)[0:(dim//2)]
     pts = np.random.multivariate_normal(mean, cov, size)
+    w = 0.1 * np.ones(dim)
     y = pts @ w
     if noise != 0:
         y = y + np.random.normal(loc=0, scale=noise, size=size)
@@ -102,7 +88,7 @@ def gen_xor_data(var_lin, size):
     x1_xor = np.array([-1, 1, 1, -1])[:, np.newaxis]
     x1 = np.repeat(x1, size//4, axis=0)
     x1_xor = np.repeat(x1_xor, size//4, axis=0)
-    x2 = np.random.normal(0, np.sqrt(var_lin), size)[:, np.newaxis]  # np.sqrt(np.sqrt(2)/2)
+    x2 = np.random.normal(0, np.sqrt(var_lin), size)[:, np.newaxis]
     y = x1_xor + x2
     return {"x1": x1,
             "x2": x2,

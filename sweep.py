@@ -1,59 +1,11 @@
 import numpy as np
-from numpy.linalg import norm
-from scipy.integrate import quad
-import matplotlib
 import matplotlib.pyplot as plt
-from cycler import cycler
-from config import config
 from main import train
 from data import gen_data
 from util import *
 plt.rc('font', family="Arial")
 plt.rcParams['font.size'] = '12'
 colors = [plt.get_cmap('Set1')(i) for i in range(9)]
-
-
-def integrand(u, wa, wb, L, Lf, u0):
-    k = wb/wa
-    if Lf == 2:
-        ub = np.exp(k*np.log(u) + (1-k)*np.log(u0))
-    else:
-        ub = (k*u**(2-Lf) + (1-k)*u0**(2-Lf)) ** (1/(2-Lf))
-    denominator = wa * u**(Lf-1) * (u**2 + ub**2) ** ((L-Lf)/2)
-    return 1/denominator
-
-
-def lag_depth(args):
-    if args.fuse_depth == 1:
-        return 1
-    elif args.fuse_depth == args.depth:
-        return 1 + (args.ratio**2 - 1) / (1 - args.rho**2)
-    else:
-        wa = args.ratio**2 + args.rho * args.ratio
-        wb = 1 + args.rho * args.ratio
-        L, Lf = args.depth, args.fuse_depth
-        ua0 = args.init
-        I = quad(integrand, ua0, 1, args=(wa, wb, L, Lf, ua0))
-        if Lf == 2:
-            ln_ub0 = np.log(1/args.init) * (1-wb/wa)
-            lag = ln_ub0 * (1+args.rho/args.ratio)**(Lf/L-1) / (1-args.rho**2)
-        else:
-            ub0 = args.init * (1-wb/wa) ** (1/(2-Lf))
-            lag = ub0**(2-Lf) * (1+args.rho/args.ratio)**(Lf/L-1) / ((Lf-2) * (1-args.rho**2))
-        return 1 + lag/I[0]
-
-
-def lag_twolayer(args, data):
-    xa, xb, y = data['x1'], data['x2'], data['y']
-    cov = data['cov']
-    dim_a = xa.shape[1]
-    y_xa = np.mean(y*xa, axis=0)
-    y_xb = np.mean(y*xb, axis=0)
-    cov_a = cov[0:dim_a, 0:dim_a]
-    cov_ab = cov[0:dim_a, dim_a:]
-    wa_uni = y_xa @ np.linalg.inv(cov_a)
-    lag = (norm(y_xa) - norm(y_xb)) / norm(y_xb - wa_uni @ cov_ab)
-    return 1 + lag, wa_uni
 
 
 def sweep(args):
@@ -91,7 +43,6 @@ def toy_sweep(args):
         ax1.plot(rho_theo, lag_theo, c=colors[k], label="$\sigma_A / \sigma_B = {}$".format(ratio))
         ax1.scatter(rho_exp, lag_lin, alpha=0.8, edgecolors=colors[k], facecolors='none', marker='o')
         ax1.scatter(rho_exp, lag_relu, alpha=0.8, c=colors[k], marker='x')
-        np.save('sweep/toy_sweep_100hid_1e-9init_5repeat/time_ratio{}.npy'.format(ratio), [rho_exp, lag_lin, lag_relu])
         if ratio != 1:
             ax2.plot(rho_theo, rho_theo/ratio, c=colors[k], label="$\sigma_A / \sigma_B = {}$".format(ratio))
             ax2.scatter(rho_exp, bias_lin, alpha=0.8, edgecolors=colors[k], facecolors='none', marker='o')
@@ -105,8 +56,8 @@ def toy_sweep(args):
     ax2.legend(loc='upper left')
     fig1.tight_layout(pad=0.2)
     fig2.tight_layout(pad=0.2)
-    fig1.savefig("sweep/toy_sweep_100hid_1e-9init_5repeat/toy_sweep_time_{}hid_{}repeat.pdf".format(args.hid_width, args.repeat))
-    fig2.savefig("sweep/toy_sweep_100hid_1e-9init_5repeat/toy_sweep_bias_{}hid_{}repeat.pdf".format(args.hid_width, args.repeat))
+    fig1.savefig("toy_sweep_time_{}hid_{}repeat.pdf".format(args.hid_width, args.repeat))
+    fig2.savefig("toy_sweep_bias_{}hid_{}repeat.pdf".format(args.hid_width, args.repeat))
     plt.show()
 
 
@@ -138,13 +89,13 @@ def rho_sweep(args):
             lag_theo[i] = lag_depth(args)
         plt.plot(rho_theo, lag_theo, c=colors[k], label="$L_f={}$".format(Lf))
         plt.scatter(rho_exp, lag_exp, alpha=0.8, edgecolors=colors[k], facecolors='none', marker='o')
-        np.save('sweep/time_deep_Lf{}.npy'.format(Lf), [rho_exp, lag_exp])
+        np.save('sweep_time_deep_Lf{}.npy'.format(Lf), [rho_exp, lag_exp])
     plt.xlabel(r"Correlation coefficient $\rho$")
     plt.ylabel(r"Time ratio $t_B / t_A$")
     plt.gca().set_yscale('log')
     plt.legend()
     plt.tight_layout(pad=0.5)
-    plt.savefig("sweep/depth{}_sweep_ratio{}_{}hid_{}repeat.pdf".format(args.depth, args.ratio, args.hid_width, args.repeat))
+    plt.savefig("sweep_depth{}_sweep_ratio{}_{}hid_{}repeat.pdf".format(args.depth, args.ratio, args.hid_width, args.repeat))
     plt.show()
     
 
@@ -192,54 +143,4 @@ def init_sweep(args):
     plt.legend()
     plt.tight_layout(pad=0.5)
     plt.savefig("init_sweep.pdf")
-    plt.show()
-
-
-def rand_sweep(args):
-    lag = np.zeros((2, args.repeat))
-    i = 0
-    while i < args.repeat:
-        data = gen_data(args)
-        lag_theo, wa_uni = lag_twolayer(args, data)  # theoretical prediction
-        if lag_theo > 20 or lag_theo < 1:
-            continue
-        else:
-            lag[0, i] = lag_theo
-            results = train(data, args)
-            losses, weights = results['Ls'], results['W']
-            if losses[-1] < 1e-3:
-                Wa_tot = norm(weights[:, 0:(args.in_dim//2)], axis=1)
-                Wb_tot = norm(weights[:, (args.in_dim//2):], axis=1)
-                ta = time_half(args, Wa_tot, False, norm(wa_uni))
-                tb = time_half(args, Wb_tot, True)
-                lag[1, i] = tb / ta  # simulated result
-                i += 1
-    plt.figure(figsize=(3, 3))
-    plt.scatter(lag[0,:], lag[1,:], c='k', s=10)
-    line = np.linspace(0, np.max(lag), 100)
-    plt.plot(line, line, c='k')
-    plt.xticks([0, 10, 20])
-    plt.yticks([0, 10, 20])
-    plt.axis('equal')
-    plt.xlabel("Theory")
-    plt.ylabel("Experiment")
-    plt.title("Time ratio")
-    plt.tight_layout(pad=0.5)
-    plt.show()
-
-
-def xor_sweep(args):
-    assert args.data == 'xor', "Cannot do xor_sweep for {} datasets".format(args.data)
-    vars = np.hstack((np.linspace(0.01, 2, 30),
-                      np.linspace(2.1, 5, 10)))
-    dirs = []
-    for var in vars:
-        args.var_lin = var
-        data = gen_data(args)
-        results = train(data, args)
-        dirs.append(results['W'])
-        print(var)
-    plt.scatter(vars, np.array(dirs), c='k')
-    plt.xlabel("Variance of linear modality")
-    plt.ylabel("Number of directions")
     plt.show()

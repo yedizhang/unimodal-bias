@@ -1,31 +1,49 @@
 import numpy as np
+from numpy.linalg import norm
+from scipy.integrate import quad
 
 
-def sph2cart(polar, azimuth, r):
-    polar = polar * np.pi / 180
-    azimuth = azimuth * np.pi / 180
-    x = r * np.sin(polar) * np.cos(azimuth)
-    y = r * np.sin(polar) * np.sin(azimuth)
-    z = r * np.cos(polar)
-    return np.array([x, y, z])
+def integrand(u, wa, wb, L, Lf, u0):
+    k = wb/wa
+    if Lf == 2:
+        ub = np.exp(k*np.log(u) + (1-k)*np.log(u0))
+    else:
+        ub = (k*u**(2-Lf) + (1-k)*u0**(2-Lf)) ** (1/(2-Lf))
+    denominator = wa * u**(Lf-1) * (u**2 + ub**2) ** ((L-Lf)/2)
+    return 1/denominator
 
 
-def cart2sph(xyz):
-    xy = xyz[:,0]**2 + xyz[:,1]**2
-    sph = np.zeros(xyz.shape)
-    sph[0] = np.sqrt(xy + xyz[:,2]**2)  # radius
-    sph[1] = np.arctan2(np.sqrt(xy), xyz[:,2]) * 180 / np.pi  # polar, elevation angle defined from Z-axis down
-    sph[2] = np.arctan2(xyz[:,1], xyz[:,0]) * 180 / np.pi  # azimuth
-    return sph
+def lag_depth(args):
+    if args.fuse_depth == 1:
+        return 1
+    elif args.fuse_depth == args.depth:
+        return 1 + (args.ratio**2 - 1) / (1 - args.rho**2)
+    else:
+        wa = args.ratio**2 + args.rho * args.ratio
+        wb = 1 + args.rho * args.ratio
+        L, Lf = args.depth, args.fuse_depth
+        ua0 = args.init
+        I = quad(integrand, ua0, 1, args=(wa, wb, L, Lf, ua0))
+        if Lf == 2:
+            ln_ub0 = np.log(1/args.init) * (1-wb/wa)
+            lag = ln_ub0 * (1+args.rho/args.ratio)**(Lf/L-1) / (1-args.rho**2)
+        else:
+            ub0 = args.init * (1-wb/wa) ** (1/(2-Lf))
+            lag = ub0**(2-Lf) * (1+args.rho/args.ratio)**(Lf/L-1) / ((Lf-2) * (1-args.rho**2))
+        return 1 + lag/I[0]
 
 
-def count_angle(sph):
-    polar = (sph[:, 1]/4).astype(int) * 4
-    azimuth = (sph[:, 2]/4).astype(int) * 4
-    p_val, p_num = np.unique(polar, return_counts=True)
-    a_val, a_num = np.unique(azimuth, return_counts=True)
-    val, num = np.unique(polar*azimuth, return_counts=True)
-    return len(num)
+def lag_twolayer(args, data):
+    xa, xb, y = data['x1'], data['x2'], data['y']
+    cov = data['cov']
+    dim_a = xa.shape[1]
+    y_xa = np.mean(y*xa, axis=0)
+    y_xb = np.mean(y*xb, axis=0)
+    cov_a = cov[0:dim_a, 0:dim_a]
+    cov_ab = cov[0:dim_a, dim_a:]
+    wa_uni = y_xa @ np.linalg.inv(cov_a)
+    lag = (norm(y_xa) - norm(y_xb)) / norm(y_xb - wa_uni @ cov_ab)
+    return 1 + lag, wa_uni
 
 
 def bivariate_normal(X, Y, sigmax=1.0, sigmay=1.0, mux=0.0, muy=0.0, sigmaxy=0.0):
